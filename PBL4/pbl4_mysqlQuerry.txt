@@ -1,0 +1,47 @@
+CREATE TABLE PhongBan (
+TaiKhoan VARCHAR(255) NOT NULL,
+MatKhau VARCHAR(255) NOT NULL,
+PRIMARY KEY (TaiKhoan)
+);
+
+CREATE TABLE HoatDong (
+MSHD INT AUTO_INCREMENT,
+TaiKhoan VARCHAR(255) NOT NULL,
+HanhVi VARCHAR(255) NOT NULL,
+ThoiGian DATETIME DEFAULT CURRENT_TIMESTAMP,
+DoiTuong VARCHAR(255) NOT NULL,
+FOREIGN KEY (TaiKhoan) REFERENCES PhongBan(TaiKhoan),
+PRIMARY KEY (MSHD)
+);
+
+CREATE TABLE ChiaSe (
+MSCS INT AUTO_INCREMENT,
+TaiKhoanChiaSe VARCHAR(255) NOT NULL,
+TaiKhoanNhanChiaSe VARCHAR(255) NOT NULL,
+FOREIGN KEY (TaiKhoanChiaSe) REFERENCES PhongBan(TaiKhoan),
+FOREIGN KEY (TaiKhoanNhanChiaSe) REFERENCES PhongBan(TaiKhoan),
+PRIMARY KEY (MSCS)
+);
+
+INSERT INTO PhongBan(TaiKhoan, MatKhau)
+       VALUES ('phongban01', '1');
+INSERT INTO PhongBan(TaiKhoan, MatKhau)
+       VALUES ('phongban02', '1');
+INSERT INTO PhongBan(TaiKhoan, MatKhau)
+       VALUES ('phongban03', '1');
+INSERT INTO PhongBan(TaiKhoan, MatKhau)
+       VALUES ('phongban04', '1');
+INSERT INTO PhongBan(TaiKhoan, MatKhau)
+       VALUES ('phongban05', '1');
+INSERT INTO PhongBan(TaiKhoan, MatKhau)
+       VALUES ('phongban06', '1');
+INSERT INTO PhongBan(TaiKhoan, MatKhau)
+       VALUES ('phongban07', '1');
+INSERT INTO PhongBan(TaiKhoan, MatKhau)
+       VALUES ('phongban08', '1');
+       
+INSERT INTO HoatDong(TaiKhoan, HanhVi, DoiTuong)
+       VALUES ('phongban01', 'download', 'CDEF');
+       
+INSERT INTO ChiaSe(TaiKhoanChiaSe, TaiKhoanNhanChiaSe)
+       VALUES ('phongban01', 'phongban02');
