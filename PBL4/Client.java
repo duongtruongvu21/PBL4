@@ -226,7 +226,11 @@ public class Client {
 						Socket socket = new Socket(host, port);
 						DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
 						dos.writeUTF("SendFile");
-						dos.writeUTF(jtTK.getText());
+						if(jcShare.getSelectedIndex()==0) {
+							dos.writeUTF(jtTK.getText());
+						} else {
+							dos.writeUTF("public");
+						}
 						dos.writeUTF(fileToSend[0].getName());
 						FileInputStream fileInputStream = new FileInputStream(fileToSend[0].getAbsolutePath());
 						byte[] fileBytes = new byte[(int) fileToSend[0].length()];
@@ -272,7 +276,11 @@ public class Client {
 						Socket socket = new Socket(host, port);
 						DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
 						dos.writeUTF("SendFolder");
-						dos.writeUTF(jtTK.getText());
+						if(jcShare.getSelectedIndex()==0) {
+							dos.writeUTF(jtTK.getText());
+						} else {
+							dos.writeUTF("public");
+						}
 						dos.writeUTF(folderToSend[0].getName());
 						File arr[] = folderToSend[0].listFiles();
 						ArrayList<String> nameFile = new ArrayList<>();
@@ -323,7 +331,7 @@ public class Client {
 			public void actionPerformed(ActionEvent e) {
 				// TODO Auto-generated method stub
 				LoadData();
-				if(jcShare.getSelectedIndex()==0) {
+				if(jcShare.getSelectedIndex()<2) {
 					jbChooseFile.setEnabled(true);
 					jbChooseFolder.setEnabled(true);
 				} else {
@@ -390,7 +398,7 @@ public class Client {
 							dos.writeInt(index);
 							dos.close();
 							socket.close();
-							LoadData();
+							jcShare.setSelectedIndex(0); // reset lại đối với folder thì bị lỗi nên về 0 cho chắc
 						} catch (Exception er) {
 							// TODO: handle exception
 						}
