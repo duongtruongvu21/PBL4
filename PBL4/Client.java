@@ -269,7 +269,6 @@ public class Client {
 				jlFileName.setText("Đang gửi đi, có thể mất vài phút nếu đường truyền bận!");
 				if (isServerAlive() == 1) {
 					try {
-						jlFileName.setText("Đang gửi đi, có thể mất vài phút nếu đường truyền bận!");
 						Socket socket = new Socket(host, port);
 						DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
 						dos.writeUTF("SendFolder");
@@ -379,7 +378,15 @@ public class Client {
 							Socket socket = new Socket(host, port);
 							DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
 							dos.writeUTF("Delete");
-							dos.writeUTF(jtTK.getText());
+							if(jcShare.getSelectedIndex()==0) {
+								dos.writeUTF(jtTK.getText());
+							} else {
+								if(jcShare.getSelectedIndex()==1) {
+									dos.writeUTF("public");
+								} else {
+									dos.writeUTF(jcShare.getSelectedItem().toString());
+								}
+							}
 							dos.writeInt(index);
 							dos.close();
 							socket.close();
@@ -396,7 +403,15 @@ public class Client {
 							DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
 			                DataInputStream dis = new DataInputStream(socket.getInputStream());
 							dos.writeUTF("Download");
-							dos.writeUTF(jtTK.getText());
+							if(jcShare.getSelectedIndex()==0) {
+								dos.writeUTF(jtTK.getText());
+							} else {
+								if(jcShare.getSelectedIndex()==1) {
+									dos.writeUTF("public");
+								} else {
+									dos.writeUTF(jcShare.getSelectedItem().toString());
+								}
+							}
 							dos.writeInt(index);
 							String namestr = "";
 							String request = dis.readUTF();
@@ -407,6 +422,12 @@ public class Client {
 								int sizeFile = dis.readInt();
 								byte[] fileContentBytes = new byte[sizeFile];
 								dis.readFully(fileContentBytes, 0, fileContentBytes.length);
+								if(jcShare.getSelectedIndex() == 1) {
+									nameFile = "public_" + nameFile;
+								}
+								if(jcShare.getSelectedIndex() > 1) {
+									nameFile = jcShare.getSelectedItem().toString() + "_" + nameFile;
+								}
 								File fileToDownload = new File(pathRootClient + "\\" + nameFile);
 								FileOutputStream fileOutputStream = new FileOutputStream(fileToDownload);
 			                    fileOutputStream.write(fileContentBytes);
@@ -416,6 +437,12 @@ public class Client {
 							case "SendFolder": {
 								String nameFolder = dis.readUTF();
 								namestr = "thư mục " + nameFolder;
+								if(jcShare.getSelectedIndex() == 1) {
+									nameFolder = "public_" + nameFolder;
+								}
+								if(jcShare.getSelectedIndex() > 1) {
+									nameFolder = jcShare.getSelectedItem().toString() + "_" + nameFolder;
+								}
 								File newfolder = new File(pathRootClient + "\\" + nameFolder);
 								if (!newfolder.exists()){
 									newfolder.mkdirs();
@@ -424,7 +451,7 @@ public class Client {
 								Object objectReceive = objectInput.readObject();
 								ArrayList<String> NameFolderList = (ArrayList<String>)objectReceive;
 								int amountFileReceive = dis.readInt();
-								System.out.println("sẽ nhận thêm: " + amountFileReceive);
+								//System.out.println("sẽ nhận thêm: " + amountFileReceive);
 								for(int i = 0; i < NameFolderList.size(); i++) {
 									File new_folder = new File(newfolder + "\\" + NameFolderList.get(i));
 									if (!new_folder.exists()){
@@ -447,7 +474,7 @@ public class Client {
 							default:
 								break;
 							}
-							jlFileName.setText("Đã gửi " + namestr + " thành công!");
+							jlFileName.setText("Đã tải " + namestr + " thành công!");
 							dos.close();
 							socket.close();
 							LoadData();
@@ -458,7 +485,6 @@ public class Client {
 					}
 					
 					case "OpenShare":{
-						
 						try {
 							String name = ((JButton) e.getSource()).getName();
 							Socket socket = new Socket(host, port);
@@ -473,12 +499,11 @@ public class Client {
 							// TODO: handle exception
 						}
 						
-						System.out.println("Mở chia sẻ: " + ((JButton) e.getSource()).getName());
+						//System.out.println("Mở chia sẻ: " + ((JButton) e.getSource()).getName());
 				        break;
 					}
 					
 					case "CloseShare":{
-						
 						try {
 							String name = ((JButton) e.getSource()).getName();
 							Socket socket = new Socket(host, port);
@@ -493,8 +518,31 @@ public class Client {
 							// TODO: handle exception
 						}
 						
-						System.out.println("Đóng Chia sẻ: " + ((JButton) e.getSource()).getName());
+						//System.out.println("Đóng Chia sẻ: " + ((JButton) e.getSource()).getName());
 				        break;
+					}
+					
+					case "Copy":{
+						try {
+							Socket socket = new Socket(host, port);
+							DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
+							int index = Integer.parseInt(((JButton) e.getSource()).getName());
+							dos.writeUTF("Copy");
+							dos.writeUTF(jtTK.getText()); // gửi định danh người request
+							if(jcShare.getSelectedIndex() == 1) { //gửi địa chỉ muốn copy
+								dos.writeUTF("public");
+							}
+							if(jcShare.getSelectedIndex() > 1) {
+								dos.writeUTF(jcShare.getSelectedItem().toString());
+							}
+							dos.writeInt(index); // gửi index file muốn copy
+							dos.close();  // gửi xong, đóng kết nối reload lại dữ liệu
+							socket.close();
+							LoadData();
+						} catch (Exception e2) {
+							e2.printStackTrace();
+						}
+						break;
 					}
 					
 					default:
@@ -549,10 +597,14 @@ public class Client {
 			Socket socket = new Socket(host, port);
 			DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
 			dos.writeUTF("GetData");
-			if(jcShare.getSelectedIndex()<2) {
+			if(jcShare.getSelectedIndex()==0) {
 				dos.writeUTF(jtTK.getText());
 			} else {
-				dos.writeUTF(jcShare.getSelectedItem().toString());
+				if(jcShare.getSelectedIndex()==1) {
+					dos.writeUTF("public");
+				} else {
+					dos.writeUTF(jcShare.getSelectedItem().toString());
+				}
 			}
 			ObjectInputStream objectInput = new ObjectInputStream(socket.getInputStream());
 			Object objectReceive = objectInput.readObject();
@@ -588,16 +640,30 @@ public class Client {
 				jbDele.setPreferredSize(new Dimension(100, 24));
 				jbDele.setFont(new Font("Arial", Font.BOLD, 16));
 				jbDele.setName("" + i);
+				
+				JButton jbCopy = new JButton("Sao");
+				jbCopy.setPreferredSize(new Dimension(100, 24));
+				jbCopy.setFont(new Font("Arial", Font.BOLD, 16));
+				jbCopy.setName("" + i);
+				
 				jpFileRow.addMouseListener(getMouseListener("Click"));
 				jbDown.addMouseListener(getMouseListener("Down"));
 				jbDele.addMouseListener(getMouseListener("Dele"));
+				jbCopy.addMouseListener(getMouseListener("Copy"));
 				// Add everything.
 				jpFileRow.add(jlFileName);
-				if(jcShare.getSelectedIndex()<2) {
+				if(jcShare.getSelectedIndex()==0) { // của bản thân thì mở tải về - xóa
 					jpFileRow.add(jbDown);
 					jpFileRow.add(jbDele);
 				} else {
-					jpFileRow.add(jbDown);
+					if(jcShare.getSelectedIndex()==1) { // của chung thì tải về - xóa - sao chép về bản thân
+						jpFileRow.add(jbCopy);
+						jpFileRow.add(jbDown);
+						jpFileRow.add(jbDele);
+					} else { // của người khác thì tải hoặc sao thôi - không xóa được
+						jpFileRow.add(jbCopy);
+						jpFileRow.add(jbDown);
+					}
 				}
 				jpShowFileServer.add(jpFileRow);
 				// System.out.println(NameFileList.get(i));
@@ -640,7 +706,7 @@ public class Client {
 			dos.close();
 			socket.close();
 		} catch (Exception er) {
-			// TODO: handle exception
+			er.printStackTrace();
 		}
 	}
 	
@@ -738,7 +804,7 @@ public class Client {
 			dos.close();
 			socket.close();
 		} catch (Exception er) {
-			// TODO: handle exception
+			er.printStackTrace();
 		}
 	}
 	
