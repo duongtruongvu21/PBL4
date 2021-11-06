@@ -1,3 +1,9 @@
+/*
+ * ******** SPEED TEST *********
+ * ***** 192.168.1.12 - local other: sidebyside: 10-11MB, 10m: 1.5MB
+ * *****************************
+ */
+
 package PBL4;
 
 import java.awt.Component;
@@ -5,6 +11,8 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.*;
@@ -20,6 +28,7 @@ public class Client {
 	static JTextField jtHost, jtPort, jtTK, jtMK;
 	static JLabel jlTitle, jlFileName, jlDataServer;
 	static JComboBox jcShare;
+	static JButton jbConnect;
 	static String host = ""; static int port = 0;
 	static String pathRootClient = System.getProperty("user.home") + "\\Downloads\\PBL4_Client";
 	static File folderRootClient = new File(pathRootClient);
@@ -32,7 +41,7 @@ public class Client {
 		
 		final File[] fileToSend = new File[1];
 		final File[] folderToSend = new File[1];
-		JButton jbConnect, jbChooseFile, jbChooseFolder, jbSendFile, jbSendFolder, jbShare, jbSynch;
+		JButton jbChooseFile, jbChooseFolder, jbSendFile, jbSendFolder, jbShare, jbSynch;
 		JLabel jlhost, jlport, jlTK, jlMK;
 		JScrollPane jScrollPane;
 
@@ -169,32 +178,64 @@ public class Client {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				// TODO Auto-generated method stub
-				if(jtHost.getText().equals("") || jtPort.getText().equals("") || jtTK.getText().equals("") || jtMK.getText().equals("")) {
-					jlDataServer.setText("Nhập vào đủ thông tin!!!");
-				} else {
+				if(!jbConnect.getText().equals("Kết nối")) {
+					
+					jbChooseFile.setEnabled(false);
+					jbChooseFolder.setEnabled(false);
+					jbShare.setEnabled(false);
+					jlDataServer.setText("Vui Lòng kết nối");
+					jtHost.setEditable(true);
+					jtPort.setEditable(true);
+					jtTK.setEditable(true);
+					jtMK.setEditable(true);
+					
+					fileToSend[0] = null;
+					folderToSend[0] = null;
+					
+					jbConnect.setText("Kết nối");
+
+					jcShare.removeAllItems();
+					jcShare.revalidate();
+					jcShare.repaint();
+					jcShare.setEnabled(false);
+
 					jpShowFileServer.removeAll();
 					jpShowFileServer.revalidate();
 					jpShowFileServer.repaint();
-					int status_ = isServerAlive();
-					if (status_ == 1) {
-						LoadDataCBB();
-						jbChooseFile.setEnabled(true);
-						jbChooseFolder.setEnabled(true);
-						jbShare.setEnabled(true);
-						jcShare.setEnabled(true);
-						jlDataServer.setText("Đã kết nối đến Server! Dữ liệu của bạn trên Server ở đây:");
-						jtHost.setEditable(false);
-						jtPort.setEditable(false);
-						jtTK.setEditable(false);
-						jtMK.setEditable(false);
-					} 
-					if (status_ == 0) {
-						jlDataServer.setText("Tài khoản truy cập không đúng!! Vui lòng kiểm tra lại!");
-					}
 					
-					if(status_ == -1) {
-						jlDataServer.setText("Xãy ra sự cố khi kết nối đến Server!! Vui lòng kiểm tra lại!");
+
+				} else {
+					if(jtHost.getText().equals("") || jtPort.getText().equals("") || jtTK.getText().equals("") || jtMK.getText().equals("")) {
+						jlDataServer.setText("Nhập vào đủ thông tin!!!");
+					} else {
+						jpShowFileServer.removeAll();
+						jpShowFileServer.revalidate();
+						jpShowFileServer.repaint();
+						int status_ = isServerAlive();
+						if (status_ == 10) {
+							jbConnect.setText("Ngắt kết nối");
+							LoadDataCBB();
+							jbChooseFile.setEnabled(true);
+							jbChooseFolder.setEnabled(true);
+							jbShare.setEnabled(true);
+							jcShare.setEnabled(true);
+							jlDataServer.setText("Đã kết nối đến Server! Dữ liệu của bạn trên Server ở đây:");
+							jtHost.setEditable(false);
+							jtPort.setEditable(false);
+							jtTK.setEditable(false);
+							jtMK.setEditable(false);
+						} 
+						if (status_ == 0) {
+							jlDataServer.setText("Tài khoản truy cập không đúng!! Vui lòng kiểm tra lại!");
+						}
+						
+						if(status_ == -1) {
+							jlDataServer.setText("Xãy ra sự cố khi kết nối đến Server!! Vui lòng kiểm tra lại!");
+						}
+						
+						if(status_ == 1) {
+							jlDataServer.setText("Đơn vị truy cập không đúng!");
+						}
 					}
 				}
 			}
@@ -204,7 +245,6 @@ public class Client {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				// TODO Auto-generated method stub
 				JFileChooser jFileChooser = new JFileChooser();
 				jFileChooser.setDialogTitle("Chọn tệp để gửi đi: ");
 				if (jFileChooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
@@ -219,9 +259,8 @@ public class Client {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				// TODO Auto-generated method stub
 				jlFileName.setText("Đang gửi đi, có thể mất vài phút nếu đường truyền bận!");
-				if (isServerAlive() == 1) {
+				if (isServerAlive() == 10) {
 					try {
 						Socket socket = new Socket(host, port);
 						DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
@@ -231,7 +270,8 @@ public class Client {
 						} else {
 							dos.writeUTF("public");
 						}
-						dos.writeUTF(fileToSend[0].getName());
+						dos.writeUTF(fileToSend[0].getName()); // gửi tên file
+						System.out.println(fileToSend[0].getName() + " ...//... " + fileToSend[0].getPath());
 						FileInputStream fileInputStream = new FileInputStream(fileToSend[0].getAbsolutePath());
 						byte[] fileBytes = new byte[(int) fileToSend[0].length()];
 						fileInputStream.read(fileBytes);
@@ -241,10 +281,10 @@ public class Client {
 						socket.close();
 						jbSendFile.setEnabled(false);
 						jlFileName.setText("Đã gửi tệp: '" + fileToSend[0].getName() + "' thành công!");
-						LoadData();
+						LoadData(); // gửi file xong load lại
 						fileToSend[0] = null;
 					} catch (Exception er) {
-						// TODO: handle exception
+						System.out.println("ERROR: " + e);
 					}
 				}
 			}
@@ -254,7 +294,6 @@ public class Client {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				// TODO Auto-generated method stub
 				JFileChooser jFileChooser = new JFileChooser();
 				jFileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 				jFileChooser.setDialogTitle("Chọn thư mục để gửi đi: ");
@@ -269,9 +308,8 @@ public class Client {
 		jbSendFolder.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				// TODO Auto-generated method stub
 				jlFileName.setText("Đang gửi đi, có thể mất vài phút nếu đường truyền bận!");
-				if (isServerAlive() == 1) {
+				if (isServerAlive() == 10) {
 					try {
 						Socket socket = new Socket(host, port);
 						DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
@@ -306,10 +344,10 @@ public class Client {
 						socket.close();
 						jbSendFolder.setEnabled(false);
 						jlFileName.setText("Đã gửi thư mục: '" + folderToSend[0].getName() + "' thành công!");
-						LoadData();
+						LoadData(); // gửi thư mục xong load lại
 						folderToSend[0] = null;
 					} catch (Exception er) {
-						// TODO: handle exception
+						System.out.println("ERROR: " + er);
 					}
 				}
 			}
@@ -319,18 +357,30 @@ public class Client {
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				// TODO Auto-generated method stub
 				JDialog shareFrame = createFrameShare();
 				shareFrame.setVisible(true);
 			}
 		});
 		
-		jcShare.addActionListener(new ActionListener() {
+//		jcShare.addActionListener(new ActionListener() {
+//			@Override
+//			public void actionPerformed(ActionEvent e) {
+//				//LoadData(); // chọn cbb rồi load lại
+//				if(jcShare.getSelectedIndex()<2) {
+//					jbChooseFile.setEnabled(true);
+//					jbChooseFolder.setEnabled(true);
+//				} else {
+//					jbChooseFile.setEnabled(false);
+//					jbChooseFolder.setEnabled(false);
+//				}
+//			}
+//		});
+		
+		jcShare.addItemListener(new ItemListener() {
 			
 			@Override
-			public void actionPerformed(ActionEvent e) {
-				// TODO Auto-generated method stub
-				LoadData();
+			public void itemStateChanged(ItemEvent e) {
+				LoadData(); // chọn cbb rồi load lại
 				if(jcShare.getSelectedIndex()<2) {
 					jbChooseFile.setEnabled(true);
 					jbChooseFolder.setEnabled(true);
@@ -341,12 +391,11 @@ public class Client {
 			}
 		});
 		
-		
 		// end main
 	}
 
 	static int isServerAlive() {
-		int trave = -1; // -1 là không kết nối được, 0 là sai tk mk, 1 là thành công
+		int trave = -1; // -1 là không kết nối được, 0 là sai tk mk, 1 là sai máy, 10 là thành công
 		try {
 			Socket socket = new Socket(jtHost.getText(), Integer.parseInt(jtPort.getText()));
 			DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
@@ -354,17 +403,13 @@ public class Client {
 			dos.writeUTF(jtTK.getText());
 			dos.writeUTF(jtMK.getText());
 			DataInputStream dis = new DataInputStream(socket.getInputStream());
-			if(dis.readBoolean()) {
-				trave = 1;
-			} else {
-				trave = 0;
-			}
+			trave = dis.readInt();
 			host = jtHost.getText();
 			port = Integer.parseInt(jtPort.getText());
 			dos.close();
 			socket.close();
 		} catch (Exception e) {
-			// TODO: handle exception
+			System.out.println("ERROR: " + e);
 		}
 		return trave;
 	}
@@ -374,7 +419,6 @@ public class Client {
 
 			@Override
 			public void mouseReleased(MouseEvent e) {
-				// TODO Auto-generated method stub
 				if (todo.equals("Click")) {
 					//System.out.println(todo + ": " + ((JPanel) e.getSource()).getName());
 				} else {
@@ -382,7 +426,9 @@ public class Client {
 					switch (todo) {
 					case "Dele": {
 						try {
-							int index = Integer.parseInt(((JButton) e.getSource()).getName());
+							String name_ = ((JButton) e.getSource()).getName();
+							System.out.println(name_);
+							//int index = Integer.parseInt(((JButton) e.getSource()).getName());
 							Socket socket = new Socket(host, port);
 							DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
 							dos.writeUTF("Delete");
@@ -395,18 +441,21 @@ public class Client {
 									dos.writeUTF(jcShare.getSelectedItem().toString());
 								}
 							}
-							dos.writeInt(index);
+							dos.writeUTF(name_);
+							DataInputStream dis = new DataInputStream(socket.getInputStream());
+							System.out.println(dis.readUTF());
+							dis.readUTF();
 							dos.close();
 							socket.close();
 							jcShare.setSelectedIndex(0); // reset lại đối với folder thì bị lỗi nên về 0 cho chắc
 						} catch (Exception er) {
-							// TODO: handle exception
+							System.out.println("ERROR: " + er);
 						}
 						break;
 					}
 					case "Down": {
 						try {
-							int index = Integer.parseInt(((JButton) e.getSource()).getName());
+							String name_ = ((JButton) e.getSource()).getName();
 							Socket socket = new Socket(host, port);
 							DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
 			                DataInputStream dis = new DataInputStream(socket.getInputStream());
@@ -420,7 +469,8 @@ public class Client {
 									dos.writeUTF(jcShare.getSelectedItem().toString());
 								}
 							}
-							dos.writeInt(index);
+							dos.writeUTF(name_);
+							//dos.writeInt(index);
 							String namestr = "";
 							String request = dis.readUTF();
 							switch (request) {
@@ -440,6 +490,7 @@ public class Client {
 								FileOutputStream fileOutputStream = new FileOutputStream(fileToDownload);
 			                    fileOutputStream.write(fileContentBytes);
 			                    fileOutputStream.close();
+			                    System.out.println(dis.readUTF());
 								break;
 							}
 							case "SendFolder": {
@@ -477,6 +528,7 @@ public class Client {
 				                    fileOutputStream.write(fileContentBytes);
 				                    fileOutputStream.close();
 								}
+								System.out.println(dis.readUTF());
 								break;
 							}
 							default:
@@ -485,9 +537,8 @@ public class Client {
 							jlFileName.setText("Đã tải " + namestr + " thành công!");
 							dos.close();
 							socket.close();
-							LoadData();
 						} catch (Exception er) {
-							// TODO: handle exception
+							System.out.println("ERROR: " + er);
 						}
 						break;
 					}
@@ -504,7 +555,7 @@ public class Client {
 							socket.close();
 							LoadListUS();
 						} catch (Exception er) {
-							// TODO: handle exception
+							System.out.println("ERROR: " + er);
 						}
 						
 						//System.out.println("Mở chia sẻ: " + ((JButton) e.getSource()).getName());
@@ -523,7 +574,7 @@ public class Client {
 							socket.close();
 							LoadListUS();
 						} catch (Exception er) {
-							// TODO: handle exception
+							System.out.println("ERROR: " + er);
 						}
 						
 						//System.out.println("Đóng Chia sẻ: " + ((JButton) e.getSource()).getName());
@@ -534,7 +585,8 @@ public class Client {
 						try {
 							Socket socket = new Socket(host, port);
 							DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
-							int index = Integer.parseInt(((JButton) e.getSource()).getName());
+							//int index = Integer.parseInt(((JButton) e.getSource()).getName());
+							String name_ = ((JButton) e.getSource()).getName();
 							dos.writeUTF("Copy");
 							dos.writeUTF(jtTK.getText()); // gửi định danh người request
 							if(jcShare.getSelectedIndex() == 1) { //gửi địa chỉ muốn copy
@@ -543,10 +595,10 @@ public class Client {
 							if(jcShare.getSelectedIndex() > 1) {
 								dos.writeUTF(jcShare.getSelectedItem().toString());
 							}
-							dos.writeInt(index); // gửi index file muốn copy
+							dos.writeUTF(name_);
 							dos.close();  // gửi xong, đóng kết nối reload lại dữ liệu
 							socket.close();
-							LoadData();
+							LoadData(); // copy xong gửi lại
 						} catch (Exception e2) {
 							e2.printStackTrace();
 						}
@@ -560,28 +612,16 @@ public class Client {
 			}
 
 			@Override
-			public void mousePressed(MouseEvent e) {
-				// TODO Auto-generated method stub
-
-			}
+			public void mousePressed(MouseEvent e) {}
 
 			@Override
-			public void mouseExited(MouseEvent e) {
-				// TODO Auto-generated method stub
-
-			}
+			public void mouseExited(MouseEvent e) {}
 
 			@Override
-			public void mouseEntered(MouseEvent e) {
-				// TODO Auto-generated method stub
-
-			}
+			public void mouseEntered(MouseEvent e) {}
 
 			@Override
-			public void mouseClicked(MouseEvent e) {
-				// TODO Auto-generated method stub
-
-			}
+			public void mouseClicked(MouseEvent e) {}
 		};
 	}
 
@@ -624,6 +664,7 @@ public class Client {
 			
 			
 			for (int i = 0; i < NameFileList.size(); i++) {
+				//System.out.println(getNameOnly(NameFileList.get(i)));
 				JPanel jpFileRow = new JPanel();
 				jpFileRow.setLayout(new BoxLayout(jpFileRow, BoxLayout.X_AXIS));
 				String nameRow = "";
@@ -637,22 +678,22 @@ public class Client {
 				jlFileName.setFont(new Font("Roboto", Font.ITALIC, 21));
 				jlFileName.setBorder(new EmptyBorder(10, 0, 10, 0));
 				jpFileRow.setAlignmentX(Component.LEFT_ALIGNMENT);
-				jpFileRow.setName("" + i);
+				jpFileRow.setName(getNameOnly(NameFileList.get(i)));
 
 				JButton jbDown = new JButton("Tải");
 				jbDown.setPreferredSize(new Dimension(100, 24));
 				jbDown.setFont(new Font("Arial", Font.BOLD, 16));
-				jbDown.setName("" + i);
+				jbDown.setName(getNameOnly(NameFileList.get(i)));
 
 				JButton jbDele = new JButton("Xóa");
 				jbDele.setPreferredSize(new Dimension(100, 24));
 				jbDele.setFont(new Font("Arial", Font.BOLD, 16));
-				jbDele.setName("" + i);
+				jbDele.setName(getNameOnly(NameFileList.get(i)));
 				
 				JButton jbCopy = new JButton("Sao");
 				jbCopy.setPreferredSize(new Dimension(100, 24));
 				jbCopy.setFont(new Font("Arial", Font.BOLD, 16));
-				jbCopy.setName("" + i);
+				jbCopy.setName(getNameOnly(NameFileList.get(i)));
 				
 				jpFileRow.addMouseListener(getMouseListener("Click"));
 				jbDown.addMouseListener(getMouseListener("Down"));
@@ -681,7 +722,7 @@ public class Client {
 			dos.close();
 			socket.close();
 		} catch (Exception er) {
-			// TODO: handle exception
+			System.out.println("ERROR: " + er);
 		}
 	}
 	
@@ -746,7 +787,7 @@ public class Client {
         jpListUser.revalidate();
         jpListUser.repaint();
 		int status_ = isServerAlive();
-		if (status_ == 1) {
+		if (status_ == 10) {
 			LoadListUS();
 		}
         return jFrame;
@@ -816,4 +857,15 @@ public class Client {
 		}
 	}
 	
+
+	static String getNameOnly(String s) { // input "File: hello.cpp" -> output "hello.cpp"
+		int index = 0;
+		for(int i = 0; i < s.length() - 1; i++) {
+			if(s.charAt(i) == ':' && s.charAt(i+1) == ' ') {
+				index = i;
+				break;
+			}
+		}
+		return s.substring(index+2);
+	}
 }

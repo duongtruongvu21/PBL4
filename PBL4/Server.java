@@ -1,7 +1,8 @@
 /*
  * Xong mở chia sẻ
- * chưa mở được thư mục chia sẻ của người khác
+ * chưa mở được thư mục chia sẻ của người khác -- đã rồi
  * chưa đồng bộ
+ * 
  */
 
 package PBL4;
@@ -101,11 +102,14 @@ class XuLyClientServer implements Runnable {
 			switch (request) {
 			case "checkConnect": {
 				//System.out.println("Client is checking the connect");
+				//System.out.println(socket.getLocalAddress().toString());
 				String tk = dis.readUTF();
 				String mk = dis.readUTF();
 				DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
-				dos.writeBoolean(checkLogin(tk, mk));
+				dos.writeInt(checkLogin(tk, mk, socket.getLocalAddress().toString()));
 				dos.close();
+				dis.close();
+				socket.close();
 				break;
 			}
 			case "Connect": {
@@ -119,6 +123,8 @@ class XuLyClientServer implements Runnable {
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
+				dis.close();
+				socket.close();
 				break;
 			}
 			case "GetData": {
@@ -132,6 +138,9 @@ class XuLyClientServer implements Runnable {
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
+				dis.close();
+				socket.close();
+				System.out.println("gdt");
 				break;
 			}
 			case "SendFile": {
@@ -148,6 +157,8 @@ class XuLyClientServer implements Runnable {
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
+				dis.close();
+				socket.close();
 				break;
 			}
 			case "SendFolder": {
@@ -183,13 +194,16 @@ class XuLyClientServer implements Runnable {
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
+				dis.close();
+				socket.close();
 				break;
 			}
 			case "Download": { // tạm
 				String tk = dis.readUTF();
-				int indexDown = dis.readInt();
+				//int indexDown = dis.readInt();
+				String name_ = dis.readUTF();
 				//System.out.println("Nhận tên: " + tk);
-				File fileDown = new File(getPathFileByIndex(indexDown, tk));
+				File fileDown = new File(getPathFileByName(name_, tk));
 				if (fileDown.isFile()) {
 					DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
 					dos.writeUTF("SendFile");
@@ -199,6 +213,7 @@ class XuLyClientServer implements Runnable {
 					fileInputStream.read(fileBytes);
 					dos.writeInt(fileBytes.length);
 					dos.write(fileBytes);
+					dos.writeUTF("Success");
 					dos.close();
 				} else {
 					DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
@@ -223,6 +238,7 @@ class XuLyClientServer implements Runnable {
 						dos.writeInt(fileBytes.length);
 						dos.write(fileBytes);
 					}
+					dos.writeUTF("Success");
 					objectOutput.close();
 					dos.close();
 				}
@@ -232,14 +248,18 @@ class XuLyClientServer implements Runnable {
 			}
 			case "Delete": { // tạm
 				String tk = dis.readUTF();
-				int indexDele = dis.readInt();
-				// System.out.println(getPathFileByIndex(indexDele));
-				File fileDele = new File(getPathFileByIndex(indexDele, tk));
+				String name_ = dis.readUTF();
+				File fileDele = new File(getPathFileByName(name_, tk));
 				if (fileDele.isFile()) {
 					fileDele.delete();
 				} else {
 					deleteFolder(fileDele);
 				}
+				DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
+				dos.writeUTF("Success");
+				dos.close();
+				dis.close();
+				socket.close();
 				break;
 			}
 
@@ -271,6 +291,8 @@ class XuLyClientServer implements Runnable {
 				String tk2 = dis.readUTF();
 				// System.out.println(tk1 + " " + tk2);
 				AddShare(tk1, tk2);
+				dis.close();
+				socket.close();
 				break;
 			}
 
@@ -279,23 +301,29 @@ class XuLyClientServer implements Runnable {
 				String tk2 = dis.readUTF();
 				// System.out.println(tk1 + " " + tk2);
 				DelShare(tk1, tk2);
+				dis.close();
+				socket.close();
 				break;
 			}
 
 			case "Copy": {
 				String tk1 = dis.readUTF(); // tên người request (copy bỏ vào thư mục này)
 				String tk2 = dis.readUTF(); // copy từ dữ liệu người này
-				int index = dis.readInt(); 
-				File fileCopy = new File(getPathFileByIndex(index, tk2));
+				//int index = dis.readInt(); 
+				String name_ = dis.readUTF();
+				File fileCopy = new File(getPathFileByName(name_, tk2));
 				File fileCopynew = new File(pathRootServer + "\\" + tk1 + "\\" + fileCopy.getName());
 				
 				copyFolder(fileCopy, fileCopynew);
-				
+				dis.close();
+				socket.close();
 				break;
 			}
 			
 			default:
 				System.out.println("end");
+				dis.close();
+				socket.close();
 				break;
 			}
 		} catch (Exception e) {
@@ -323,14 +351,18 @@ class XuLyClientServer implements Runnable {
 		}
 		return trave;
 	}
-
-	// gửi lại path
-	// chưa fix
-	public static String getPathFileByIndex(int index, String tk) {
+	
+	public static String getPathFileByName(String name, String tk) {
 		String pathForTK = pathRootServer + "\\" + tk;
 		File folderForTK = new File(pathForTK);
 		File[] files = folderForTK.listFiles();
-		return files[index].getPath();
+		for(File i : files) {
+			if(i.getName().equals(name)) {
+				System.out.println(i.getPath());
+				return i.getPath();
+			}
+		}
+		return "none";
 	}
 
 	// gửi lại path - tạm
@@ -403,25 +435,29 @@ class XuLyClientServer implements Runnable {
 	
 	///// SQLLLLLLL
 
-	static boolean checkLogin(String tk, String mk) {
-		boolean trave = false;
+	static int checkLogin(String tk, String mk, String ip) {
+		int trave = 0;
 		try {
 			Class.forName("com.mysql.cj.jdbc.Driver");
-			String url = "jdbc:mysql://localhost:3306/pbl4";
+			String url = "jdbc:mysql://localhost:3306/pbl4_test";
 			Connection con = DriverManager.getConnection(url, "root", "");
 			Statement stmt = con.createStatement();
 			ResultSet rs = stmt.executeQuery("select * from phongban");
 			while (rs.next()) {
 				String tkk = rs.getString("TaiKhoan");
 				String mkk = rs.getString("MatKhau");
+				String ipp = rs.getString("IP");
 				if (tk.equals(tkk) && mk.equals(mkk)) {
-					trave = true;
+					if (tk.equals(tkk) && ip.equals(ipp)) {
+						trave = 10;
+					} else {
+						trave = 1;
+					}
 				}
 			}
 			rs.close();
 			stmt.close();
 		} catch (Exception e) {
-			// TODO: handle exception
 			System.out.println("ERROR: " + e);
 		}
 		return trave;
@@ -442,7 +478,6 @@ class XuLyClientServer implements Runnable {
 			rs.close();
 			stmt.close();
 		} catch (Exception e) {
-			// TODO: handle exception
 			System.out.println("ERROR: " + e);
 		}
 		return trave;
@@ -463,7 +498,6 @@ class XuLyClientServer implements Runnable {
 			rs.close();
 			stmt.close();
 		} catch (Exception e) {
-			// TODO: handle exception
 			System.out.println("ERROR: " + e);
 		}
 		return trave;
@@ -479,7 +513,6 @@ class XuLyClientServer implements Runnable {
 			stmt.executeUpdate(qr);
 			stmt.close();
 		} catch (Exception e) {
-			// TODO: handle exception
 			System.out.println("ERROR: " + e);
 		}
 	}
@@ -495,7 +528,6 @@ class XuLyClientServer implements Runnable {
 			stmt.executeUpdate(qr);
 			stmt.close();
 		} catch (Exception e) {
-			// TODO: handle exception
 			System.out.println("ERROR: " + e);
 		}
 	}
@@ -515,7 +547,6 @@ class XuLyClientServer implements Runnable {
 			rs.close();
 			stmt.close();
 		} catch (Exception e) {
-			// TODO: handle exception
 			System.out.println("ERROR: " + e);
 		}
 		return trave;
