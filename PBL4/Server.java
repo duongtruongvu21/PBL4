@@ -10,8 +10,11 @@ package PBL4;
 import java.awt.*;
 import java.io.*;
 import java.net.*;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.ArrayList;
@@ -20,13 +23,13 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 
 public class Server {
-
 	public static void main(String[] args) throws IOException {
 		ServerSocket serverSocket = new ServerSocket(56789);
 
 		JFrame jFrame;
+		JButton jbSignUp, jbManageUser, jbManageActivate;
 		JLabel jlTitle, jlNotify, jlInfo;
-		JPanel jpShowNotify;
+		JPanel jpShowNotify, jpButton;
 		JScrollPane jScrollPane;
 
 		jFrame = new JFrame("Server GUI");
@@ -40,10 +43,26 @@ public class Server {
 		jlTitle.setBorder(new EmptyBorder(20, 0, 10, 0));
 		jlTitle.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-		jlInfo = new JLabel(InetAddress.getLocalHost().getHostAddress() + "   " + serverSocket.getLocalSocketAddress());
+		//jlInfo = new JLabel(InetAddress.getLocalHost().getHostAddress() + "   " + serverSocket.getLocalSocketAddress());
+		jlInfo = new JLabel("IP: " + InetAddress.getLocalHost().getHostAddress() + "   Port: " + serverSocket.getLocalPort());
 		jlInfo.setFont(new Font("Arial", Font.ITALIC, 20));
-		jlInfo.setBorder(new EmptyBorder(20, 0, 10, 0));
+		jlInfo.setBorder(new EmptyBorder(5, 0, 10, 0));
 		jlInfo.setAlignmentX(Component.CENTER_ALIGNMENT);
+		
+		jpButton = new JPanel();
+		jpButton.setBorder(new EmptyBorder(10, 0, 10, 0));
+		
+		jbSignUp = new JButton("Thêm người dùng");
+		jbSignUp.setPreferredSize(new Dimension(225, 40));
+		jbSignUp.setFont(new Font("Arial", Font.BOLD, 20));
+		
+		jbManageUser = new JButton("Người dùng");
+		jbManageUser.setPreferredSize(new Dimension(225, 40));
+		jbManageUser.setFont(new Font("Arial", Font.BOLD, 20));
+		
+		jbManageActivate = new JButton("Hoạt động");
+		jbManageActivate.setPreferredSize(new Dimension(225, 40));
+		jbManageActivate.setFont(new Font("Arial", Font.BOLD, 20));
 
 		jlNotify = new JLabel("Thông báo");
 		jlNotify.setFont(new Font("Arial", Font.BOLD, 20));
@@ -55,11 +74,15 @@ public class Server {
 		jpShowNotify.setLayout(new BoxLayout(jpShowNotify, BoxLayout.Y_AXIS));
 		jScrollPane = new JScrollPane(jpShowNotify);
 		jScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+		jScrollPane.setPreferredSize(new Dimension(10, 625));
 
-		// jpShowFileServer.add(jpShowFileServer);
-
+		jpButton.add(jbSignUp);
+		jpButton.add(jbManageUser);
+		jpButton.add(jbManageActivate);
+		
 		jFrame.add(jlTitle);
 		jFrame.add(jlInfo);
+		jFrame.add(jpButton);
 		jFrame.add(jlNotify);
 		jFrame.add(jScrollPane);
 		jFrame.setVisible(true);
@@ -106,16 +129,18 @@ class XuLyClientServer implements Runnable {
 				String tk = dis.readUTF();
 				String mk = dis.readUTF();
 				DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
-				dos.writeInt(checkLogin(tk, mk, socket.getLocalAddress().toString()));
+				BO bo = new BO();
+				dos.writeInt(bo.checkLogin(tk, mk, socket.getLocalAddress().toString()));
 				dos.close();
 				dis.close();
 				socket.close();
 				break;
 			}
 			case "Connect": {
-				//System.out.println("Client is connected");
 				String tk = dis.readUTF();
-				ArrayList<String> listSharePP = getListShare(tk); // lấy danh sách người có chia sẻ dữ liệu với mình
+				System.out.println(tk + " đã đăng nhập...");
+				BO bo = new BO();
+				ArrayList<String> listSharePP = bo.getListShare(tk); // lấy danh sách người có chia sẻ dữ liệu với mình
 				try {
 					ObjectOutputStream objectOutput = new ObjectOutputStream(socket.getOutputStream());
 					objectOutput.writeObject(listSharePP);
@@ -147,6 +172,8 @@ class XuLyClientServer implements Runnable {
 				try {
 					String tk = dis.readUTF();
 					String nameFile = dis.readUTF();
+					System.out.println(tk + " gửi tệp tin: " + nameFile);
+					String pathFile = dis.readUTF(); // xử lý lưu vào db để biết vị trí đồng bộ
 					int sizeFile = dis.readInt();
 					byte[] fileContentBytes = new byte[sizeFile];
 					dis.readFully(fileContentBytes, 0, fileContentBytes.length);
@@ -154,6 +181,8 @@ class XuLyClientServer implements Runnable {
 					FileOutputStream fileOutputStream = new FileOutputStream(fileToDownload);
 					fileOutputStream.write(fileContentBytes);
 					fileOutputStream.close();
+					BO bo = new BO();
+					bo.addNewData(tk, nameFile, pathFile, "File");
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -165,6 +194,8 @@ class XuLyClientServer implements Runnable {
 				try {
 					String tk = dis.readUTF();
 					String nameFolder = dis.readUTF();
+					System.out.println(tk + " gửi thư mục: " + nameFolder);
+					String pathFolder = dis.readUTF(); // xử lý lưu vào db để biết vị trí đồng bộ
 					File newfolder = new File(pathRootServer + "\\" + tk + "\\" + nameFolder);
 					if (!newfolder.exists()) {
 						newfolder.mkdirs();
@@ -191,6 +222,8 @@ class XuLyClientServer implements Runnable {
 						fileOutputStream.write(fileContentBytes);
 						fileOutputStream.close();
 					}
+					BO bo = new BO();
+					bo.addNewData(tk, nameFolder, pathFolder, "Folder");
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -199,12 +232,14 @@ class XuLyClientServer implements Runnable {
 				break;
 			}
 			case "Download": { // tạm
+				String tk0 = dis.readUTF();
 				String tk = dis.readUTF();
 				//int indexDown = dis.readInt();
 				String name_ = dis.readUTF();
 				//System.out.println("Nhận tên: " + tk);
 				File fileDown = new File(getPathFileByName(name_, tk));
 				if (fileDown.isFile()) {
+					System.out.println(tk0 + " tải tệp tin: " + name_);
 					DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
 					dos.writeUTF("SendFile");
 					dos.writeUTF(fileDown.getName());
@@ -216,6 +251,7 @@ class XuLyClientServer implements Runnable {
 					dos.writeUTF("Success");
 					dos.close();
 				} else {
+					System.out.println(tk0 + " tải thư mục: " + name_);
 					DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
 					dos.writeUTF("SendFolder");
 					dos.writeUTF(fileDown.getName());
@@ -249,11 +285,15 @@ class XuLyClientServer implements Runnable {
 			case "Delete": { // tạm
 				String tk = dis.readUTF();
 				String name_ = dis.readUTF();
+				BO bo = new BO();
+				bo.delData(tk, name_);
 				File fileDele = new File(getPathFileByName(name_, tk));
 				if (fileDele.isFile()) {
 					fileDele.delete();
+					System.out.println(tk + " xóa tệp tin: " + name_);
 				} else {
 					deleteFolder(fileDele);
+					System.out.println(tk + " xóa thư mục: " + name_);
 				}
 				DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
 				dos.writeUTF("Success");
@@ -266,8 +306,9 @@ class XuLyClientServer implements Runnable {
 			case "ListUSShare": {
 				// System.out.println("Get List User Share");
 				String tk = dis.readUTF();
-				ArrayList<String> listUS = getListUSShared(tk); // danh sachs all taif khaorn
-				ArrayList<String> listUSS = getListUSSharedByMe(tk); // danh sach tk cho pheps
+				BO bo = new BO();
+				ArrayList<String> listUS = bo.getListUSShared(tk); // danh sachs all taif khaorn
+				ArrayList<String> listUSS = bo.getListUSSharedByMe(tk); // danh sach tk cho pheps
 				ArrayList<Boolean> temp = new ArrayList<>();
 				for (int i = 0; i < listUS.size(); i++) {
 					if (listUSS.contains(listUS.get(i))) {
@@ -289,8 +330,9 @@ class XuLyClientServer implements Runnable {
 			case "OpenShare": {
 				String tk1 = dis.readUTF();
 				String tk2 = dis.readUTF();
-				// System.out.println(tk1 + " " + tk2);
-				AddShare(tk1, tk2);
+				System.out.println(tk1 + " mở chia sẻ " + tk2);
+				BO bo = new BO();
+				bo.AddShare(tk1, tk2);
 				dis.close();
 				socket.close();
 				break;
@@ -299,8 +341,9 @@ class XuLyClientServer implements Runnable {
 			case "CloseShare": {
 				String tk1 = dis.readUTF();
 				String tk2 = dis.readUTF();
-				// System.out.println(tk1 + " " + tk2);
-				DelShare(tk1, tk2);
+				System.out.println(tk1 + " đóng chia sẻ " + tk2);
+				BO bo = new BO();
+				bo.DelShare(tk1, tk2);
 				dis.close();
 				socket.close();
 				break;
@@ -311,10 +354,115 @@ class XuLyClientServer implements Runnable {
 				String tk2 = dis.readUTF(); // copy từ dữ liệu người này
 				//int index = dis.readInt(); 
 				String name_ = dis.readUTF();
+				System.out.println(tk1 + " copy: " + tk2 + "_._" + name_);
 				File fileCopy = new File(getPathFileByName(name_, tk2));
 				File fileCopynew = new File(pathRootServer + "\\" + tk1 + "\\" + fileCopy.getName());
 				
 				copyFolder(fileCopy, fileCopynew);
+				dis.close();
+				socket.close();
+				break;
+			}
+			
+			case "Synchronize": {
+				String tk = dis.readUTF(); // tên người request
+				System.out.println(tk + " đồng bộ dữ liệu");
+				BO bo = new BO();
+				ArrayList<String> listNamePath = bo.getListNamePathFolderData(tk);
+				ArrayList<String> listPath = bo.getListPathFolderData(tk);
+				try {
+					System.out.println("ĐB");
+					ArrayList<String> temp3 = new ArrayList<>(); // chứa link folder của client gửi dề, để check cái nào không tồn tại nữa thì xóa
+					ArrayList<String> temp4 = new ArrayList<>(); // chứa link file của client gửi dề, để check cái nào không tồn tại nữa thì xóa
+					ObjectOutputStream objectOutput = new ObjectOutputStream(socket.getOutputStream());
+					objectOutput.writeObject(listPath); // gửi qua path các thư mục đã tải lên
+					
+					Boolean check = dis.readBoolean();
+					
+					if(check) { // nếu các mục gốc còn giữ được
+						for (int i = 0; i < listPath.size(); i++) {
+							temp3.add(listNamePath.get(i));
+							// nhận lại full path cho từng path lớn... tạo thêm nếu có mới
+							File newfolder = new File(pathRootServer + "\\" + tk + "\\" + listNamePath.get(i));
+							ObjectInputStream objectInput = new ObjectInputStream(socket.getInputStream());
+							Object objectReceive = objectInput.readObject(); // chứa list path folder của clt
+							ArrayList<String> NameFolderList = (ArrayList<String>) objectReceive;
+							Object objectReceive2 = objectInput.readObject(); // chứa list path file của clt
+							ArrayList<String> NameFileList = (ArrayList<String>) objectReceive2;
+							for (int j = 0; j < NameFolderList.size(); j++) {
+								File new_folder = new File(newfolder + "\\" + NameFolderList.get(j));
+								temp3.add(listNamePath.get(i) + "\\" + NameFolderList.get(j));
+								temp4.add(listNamePath.get(i) + "\\" + NameFileList.get(j));
+								if (!new_folder.exists()) {
+									new_folder.mkdirs();
+								}
+							}
+							
+							for (int j = 0; j < NameFileList.size(); j++) {
+								temp4.add(listNamePath.get(i) + "\\" + NameFileList.get(j));
+							}
+						}
+
+						File folderTK = new File(pathRootServer + "\\" + tk);
+						ArrayList<String> temp1 = new ArrayList<>(); // chứa link file ở sv
+						ArrayList<String> temp2 = new ArrayList<>(); // chứa link folder ở sv
+						
+						getChild(folderTK.listFiles(), 0, "", temp1, temp2);
+						
+						for (int i = 0; i < temp2.size(); i++) {
+							if (temp3.contains(temp2.get(i))) {
+								System.out.print(".");
+							} else {
+								System.out.println("\nTên fol này không có ở clt: " + folderTK + "\\" + temp2.get(i));
+							}
+						}
+						
+						for (int i = 0; i < temp1.size(); i++) {
+							if (temp4.contains(temp1.get(i))) {
+								System.out.print(".");
+							} else {
+								System.out.println("\nTên file này không có ở clt: " + folderTK + "\\" + temp1.get(i));
+							}
+						}
+						
+						// lấy hết mã MD5 của các file, gửi qua client so sánh, nếu khác nhận lại 
+						// file của client về khởi tạo.
+						File arr[] = folderTK.listFiles();
+						ArrayList<String> listPathFile1 = new ArrayList<>();
+						ArrayList<String> listPathFolder1 = new ArrayList<>();
+						getChild(arr, 0, folderTK + "\\", listPathFile1, listPathFolder1);
+//						for(int i = 0; i < listPathFile1.size(); i++) {
+//							System.out.println(i + ": " + listPathFile1.get(i));
+//						}
+						ArrayList<String> MD5Files = getListMD5byPathFile(listPathFile1);
+						objectOutput.writeObject(MD5Files);
+						
+						
+						int soLuongDongBo = dis.readInt();
+						
+						for(int i = 0; i < soLuongDongBo; i++) {
+							String path_temp = dis.readUTF();
+							System.out.println(folderTK + "\\" + path_temp);
+							
+							File fileDele = new File(folderTK + "\\" + path_temp);
+							if (fileDele.exists()) {
+								fileDele.delete();
+							}
+							
+							int sizeFile = dis.readInt();
+							byte[] fileContentBytes = new byte[sizeFile];
+							dis.readFully(fileContentBytes, 0, fileContentBytes.length);
+							File fileToDownload = new File(folderTK + "\\" + path_temp);
+							FileOutputStream fileOutputStream = new FileOutputStream(fileToDownload);
+							fileOutputStream.write(fileContentBytes);
+							fileOutputStream.close();
+						}
+					}
+					
+					
+				} catch (Exception e) {
+					System.out.println("ERROR345: " + e);
+				}
 				dis.close();
 				socket.close();
 				break;
@@ -433,13 +581,50 @@ class XuLyClientServer implements Runnable {
         }
 	}
 	
-	///// SQLLLLLLL
+	static String getMD5(File file) {
+		MessageDigest md;
+		try {
+			md = MessageDigest.getInstance("MD5");
+			FileInputStream fis = new FileInputStream(file);
+			byte[] dataBytes = new byte[1024];
+			int nread = 0;
+			while ((nread = fis.read(dataBytes)) != -1) {
+				md.update(dataBytes, 0, nread);
+			}
+			byte[] byteData = md.digest();
+			fis.close();
+			return convertByteToHex(byteData);
+		} catch (NoSuchAlgorithmException | IOException e) {
+			e.printStackTrace();
+			throw new RuntimeException(e);
+		}
+	}
 
-	static int checkLogin(String tk, String mk, String ip) {
+	static String convertByteToHex(byte[] data) {
+		StringBuffer sb = new StringBuffer();
+		for (int i = 0; i < data.length; i++) {
+			sb.append(Integer.toString((data[i] & 0xff) + 0x100, 16).substring(1));
+		}
+		return sb.toString();
+	}
+	
+	public ArrayList<String> getListMD5byPathFile(ArrayList<String> listPath) {
+		ArrayList<String> trave = new ArrayList<String>();
+		for(int i = 0; i < listPath.size(); i++) {
+			File temp1 = new File(listPath.get(i));
+			trave.add(getMD5(temp1));
+		}
+		return trave;
+	}
+}
+
+
+class BO { ///// SQLLLLLLL
+	public int checkLogin(String tk, String mk, String ip) {
 		int trave = 0;
 		try {
 			Class.forName("com.mysql.cj.jdbc.Driver");
-			String url = "jdbc:mysql://localhost:3306/pbl4_test";
+			String url = "jdbc:mysql://localhost:3306/pbl4";
 			Connection con = DriverManager.getConnection(url, "root", "");
 			Statement stmt = con.createStatement();
 			ResultSet rs = stmt.executeQuery("select * from phongban");
@@ -458,12 +643,12 @@ class XuLyClientServer implements Runnable {
 			rs.close();
 			stmt.close();
 		} catch (Exception e) {
-			System.out.println("ERROR: " + e);
+			System.out.println("ERROR1: " + e);
 		}
 		return trave;
 	}
 
-	public static ArrayList<String> getListUSShared(String tk) {
+	public ArrayList<String> getListUSShared(String tk) {
 		ArrayList<String> trave = new ArrayList<String>();
 		try {
 			Class.forName("com.mysql.cj.jdbc.Driver");
@@ -478,76 +663,164 @@ class XuLyClientServer implements Runnable {
 			rs.close();
 			stmt.close();
 		} catch (Exception e) {
-			System.out.println("ERROR: " + e);
+			System.out.println("ERROR2: " + e);
 		}
 		return trave;
 	}
 
-	public static ArrayList<String> getListUSSharedByMe(String tk) { // lấy danh sách những người mình chia sẻ dữ liệu ra
+	public ArrayList<String> getListUSSharedByMe(String tk) { // lấy danh sách những người mình chia sẻ dữ liệu ra
 		ArrayList<String> trave = new ArrayList<String>();
 		try {
 			Class.forName("com.mysql.cj.jdbc.Driver");
 			String url = "jdbc:mysql://localhost:3306/pbl4";
 			Connection con = DriverManager.getConnection(url, "root", "");
-			Statement stmt = con.createStatement();
-			ResultSet rs = stmt.executeQuery("select * from chiase where TaiKhoanChiaSe = '" + tk + "';");
+
+			PreparedStatement ps;
+			ps = con.prepareStatement("select * from chiase where TaiKhoanChiaSe = ?;");
+			ps.setString(1, tk);
+			ResultSet rs = ps.executeQuery();
 			while (rs.next()) {
 				String name = rs.getString("TaiKhoanNhanChiaSe");
 				trave.add(name);
 			}
 			rs.close();
-			stmt.close();
+			ps.close();
+			
 		} catch (Exception e) {
-			System.out.println("ERROR: " + e);
+			System.out.println("ERROR3: " + e);
 		}
 		return trave;
 	}
 
-	public static void AddShare(String tk1, String tk2) {
+	public void AddShare(String tk1, String tk2) {
 		try {
 			Class.forName("com.mysql.cj.jdbc.Driver");
 			String url = "jdbc:mysql://localhost:3306/pbl4";
 			Connection con = DriverManager.getConnection(url, "root", "");
-			Statement stmt = con.createStatement();
-			String qr = "INSERT INTO ChiaSe(TaiKhoanChiaSe, TaiKhoanNhanChiaSe) VALUES ('" + tk1 + "', '" + tk2 + "');";
-			stmt.executeUpdate(qr);
-			stmt.close();
+			PreparedStatement ps;
+			ps = con.prepareStatement("insert into ChiaSe(TaiKhoanChiaSe, TaiKhoanNhanChiaSe) VALUES (?, ?);");
+			ps.setString(1, tk1);
+			ps.setString(2, tk2);
+			ps.executeUpdate();
+			ps.close();
 		} catch (Exception e) {
-			System.out.println("ERROR: " + e);
+			System.out.println("ERROR4: " + e);
 		}
 	}
 
-	public static void DelShare(String tk1, String tk2) {
+	public void DelShare(String tk1, String tk2) {
 		try {
 			Class.forName("com.mysql.cj.jdbc.Driver");
 			String url = "jdbc:mysql://localhost:3306/pbl4";
 			Connection con = DriverManager.getConnection(url, "root", "");
-			Statement stmt = con.createStatement();
-			String qr = "delete from ChiaSe where TaiKhoanChiaSe = '" + tk1 + "' && TaiKhoanNhanChiaSe = '" + tk2
-					+ "';";
-			stmt.executeUpdate(qr);
-			stmt.close();
+			PreparedStatement ps;
+			ps = con.prepareStatement("delete from ChiaSe where TaiKhoanChiaSe = ? && TaiKhoanNhanChiaSe = ?;");
+			ps.setString(1, tk1);
+			ps.setString(2, tk2);
+			ps.executeUpdate();
+			ps.close();
 		} catch (Exception e) {
-			System.out.println("ERROR: " + e);
+			System.out.println("ERROR5: " + e);
 		}
 	}
 
-	public static ArrayList<String> getListShare(String tk) { // lấy danh sách những người đã chia sẻ với mình
+	public ArrayList<String> getListShare(String tk) { // lấy danh sách những người đã chia sẻ với mình
 		ArrayList<String> trave = new ArrayList<String>();
 		try {
 			Class.forName("com.mysql.cj.jdbc.Driver");
 			String url = "jdbc:mysql://localhost:3306/pbl4";
 			Connection con = DriverManager.getConnection(url, "root", "");
-			Statement stmt = con.createStatement();
-			ResultSet rs = stmt.executeQuery("select * from chiase where TaiKhoanNhanChiaSe = '" + tk + "';");
+			PreparedStatement ps;
+			ps = con.prepareStatement("select * from chiase where TaiKhoanNhanChiaSe = ?;");
+			ps.setString(1, tk);
+			ResultSet rs = ps.executeQuery();
 			while (rs.next()) {
 				String name = rs.getString("TaiKhoanChiaSe");
 				trave.add(name);
 			}
 			rs.close();
-			stmt.close();
+			ps.close();
 		} catch (Exception e) {
-			System.out.println("ERROR: " + e);
+			System.out.println("ERROR6: " + e);
+		}
+		return trave;
+	}
+	
+	public void addNewData(String tk, String tenData, String pathData, String type) {
+		try {
+			Class.forName("com.mysql.cj.jdbc.Driver");
+			String url = "jdbc:mysql://localhost:3306/pbl4";
+			Connection con = DriverManager.getConnection(url, "root", "");
+			PreparedStatement ps;
+			ps = con.prepareStatement("INSERT INTO dulieu(TaiKhoan, TenDL, PathDL, TypeDL) values (?, ?, ?, ?);");
+			ps.setString(1, tk);
+			ps.setString(2, tenData);
+			ps.setString(3, pathData);
+			ps.setString(4, type);
+			ps.executeUpdate();
+			ps.close();
+		} catch (Exception e) {
+			System.out.println("ERROR7: " + e);
+		}
+	}
+	
+	public void delData(String tk, String tenData) {
+		try {
+			Class.forName("com.mysql.cj.jdbc.Driver");
+			String url = "jdbc:mysql://localhost:3306/pbl4";
+			Connection con = DriverManager.getConnection(url, "root", "");
+			PreparedStatement ps;
+			ps = con.prepareStatement("delete from dulieu where TaiKhoan = ? && TenDL = ?;");
+			ps.setString(1, tk);
+			ps.setString(2, tenData);
+			ps.executeUpdate();
+			ps.close();
+		} catch (Exception e) {
+			System.out.println("ERROR8: " + e);
+		}
+	}
+	
+	public ArrayList<String> getListPathFolderData(String tk) {
+		// trả về list path thư mục của client gửi qua
+		ArrayList<String> trave = new ArrayList<String>();
+		try {
+			Class.forName("com.mysql.cj.jdbc.Driver");
+			String url = "jdbc:mysql://localhost:3306/pbl4";
+			Connection con = DriverManager.getConnection(url, "root", "");
+			PreparedStatement ps;
+			ps = con.prepareStatement("select * from dulieu where TaiKhoan = ? and TypeDL = 'Folder';");
+			ps.setString(1, tk);
+			ResultSet rs = ps.executeQuery();
+			while (rs.next()) {
+				String path = rs.getString("PathDL");
+				trave.add(path);
+			}
+			rs.close();
+			ps.close();
+		} catch (Exception e) {
+			System.out.println("ERROR9: " + e);
+		}
+		return trave;
+	}
+	public ArrayList<String> getListNamePathFolderData(String tk) {
+		// trả về tên thư mục của client gửi qua
+		ArrayList<String> trave = new ArrayList<String>();
+		try {
+			Class.forName("com.mysql.cj.jdbc.Driver");
+			String url = "jdbc:mysql://localhost:3306/pbl4";
+			Connection con = DriverManager.getConnection(url, "root", "");
+			PreparedStatement ps;
+			ps = con.prepareStatement("select * from dulieu where TaiKhoan = ? and TypeDL = 'Folder';");
+			ps.setString(1, tk);
+			ResultSet rs = ps.executeQuery();
+			while (rs.next()) {
+				String path = rs.getString("TenDL");
+				trave.add(path);
+			}
+			rs.close();
+			ps.close();
+		} catch (Exception e) {
+			System.out.println("ERROR10: " + e);
 		}
 		return trave;
 	}

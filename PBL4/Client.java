@@ -17,6 +17,8 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.*;
 import java.net.Socket;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 
 import javax.swing.*;
@@ -179,7 +181,7 @@ public class Client {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				if(!jbConnect.getText().equals("Kết nối")) {
-					
+					jbSynch.setEnabled(false);
 					jbChooseFile.setEnabled(false);
 					jbChooseFolder.setEnabled(false);
 					jbShare.setEnabled(false);
@@ -215,6 +217,7 @@ public class Client {
 						if (status_ == 10) {
 							jbConnect.setText("Ngắt kết nối");
 							LoadDataCBB();
+							jbSynch.setEnabled(true);
 							jbChooseFile.setEnabled(true);
 							jbChooseFolder.setEnabled(true);
 							jbShare.setEnabled(true);
@@ -271,7 +274,8 @@ public class Client {
 							dos.writeUTF("public");
 						}
 						dos.writeUTF(fileToSend[0].getName()); // gửi tên file
-						System.out.println(fileToSend[0].getName() + " ...//... " + fileToSend[0].getPath());
+						//System.out.println(fileToSend[0].getName() + " ...//... " + fileToSend[0].getPath());
+						dos.writeUTF(fileToSend[0].getPath()); // gửi path file trong máy client
 						FileInputStream fileInputStream = new FileInputStream(fileToSend[0].getAbsolutePath());
 						byte[] fileBytes = new byte[(int) fileToSend[0].length()];
 						fileInputStream.read(fileBytes);
@@ -284,7 +288,7 @@ public class Client {
 						LoadData(); // gửi file xong load lại
 						fileToSend[0] = null;
 					} catch (Exception er) {
-						System.out.println("ERROR: " + e);
+						System.out.println("ERROR1: " + e);
 					}
 				}
 			}
@@ -320,6 +324,7 @@ public class Client {
 							dos.writeUTF("public");
 						}
 						dos.writeUTF(folderToSend[0].getName());
+						dos.writeUTF(folderToSend[0].getPath()); // gửi path file trong máy client
 						File arr[] = folderToSend[0].listFiles();
 						ArrayList<String> nameFile = new ArrayList<>();
 						ArrayList<String> nameDire = new ArrayList<>();
@@ -347,7 +352,7 @@ public class Client {
 						LoadData(); // gửi thư mục xong load lại
 						folderToSend[0] = null;
 					} catch (Exception er) {
-						System.out.println("ERROR: " + er);
+						System.out.println("ERROR2: " + er);
 					}
 				}
 			}
@@ -391,6 +396,103 @@ public class Client {
 			}
 		});
 		
+		
+		jbSynch.addActionListener(new ActionListener() {
+			/* 
+			 ************** ĐỒNG BỘ DỮ LIỆU ****************
+			 *** client gửi yêu cầu đồng bộ lên server + tên tk yêu cầu
+			 *** server truy vấn CSDL để lấy path các thư mục đã up lên của client bên phía client
+			 *** client get all path đó, rồi get all path con trong các path đã get lưu vào mảng -
+			 * - rồi gửi lại cho server == để server duyệt qua xem có thư mục nào mới để add vào
+			 *** server duyệt qua các file đang có, chuyển sang mã MD5 rồi gửi về cho client theo list string
+			 *** client nhận được list string, duyệt lại tất cả file của mình theo MD5, cái nào trùng -
+			 * - thì bỏ qua, không trùng -> gửi dữ liệu tên + data file cho server
+			 */
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if (isServerAlive() == 10) {
+					try {
+						System.out.print("ĐB");
+						Socket socket = new Socket(host, port);
+						DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
+						dos.writeUTF("Synchronize"); // gửi yêu cầu đồng bộ
+						dos.writeUTF(jtTK.getText()); // tài khoản đồng bộ
+						Boolean checkBoolean = true; // kiểm tra các mục gốc còn không
+													 // còn thì được đồng bộ, không thì nghỉ
+
+						ObjectInputStream objectInput = new ObjectInputStream(socket.getInputStream());
+						Object objectReceive = objectInput.readObject();
+						ArrayList<String> listPath = (ArrayList<String>)objectReceive;
+						
+						for (int j = 0; j < listPath.size(); j++) {
+							File new_folder = new File(listPath.get(j));
+							if (!new_folder.exists()) {
+								checkBoolean = false;
+							}
+						}
+						dos.writeBoolean(checkBoolean);
+						if(checkBoolean) { // nếu đủ thư mục gốc thì gửi đi
+							//System.out.println("ĐB" + listPath.size());
+							ArrayList<String> ListnameFile1 = new ArrayList<>();
+							ArrayList<String> ListnameFile2 = new ArrayList<>();
+							ArrayList<String> ListnameFile3 = new ArrayList<>();
+							for(int i = 0; i < listPath.size(); i++) {
+								File tempFile = new File(listPath.get(i));
+								File arr[] = tempFile.listFiles();
+								ArrayList<String> nameDire = new ArrayList<>();
+								ArrayList<String> nameDire21 = new ArrayList<>(); // phụ để làm tham số thui
+								getChild(arr, 0, "", ListnameFile3, nameDire); // lấy path all thư mục
+								getChild(arr, 0, tempFile.getName() + "\\", ListnameFile1, nameDire21); // lấy path con file
+								getChild(arr, 0, listPath.get(i) + "\\", ListnameFile2, nameDire21); // lấy full path file
+								//System.out.println(nameDire.size());
+								ObjectOutputStream objectOutput = new ObjectOutputStream(socket.getOutputStream());
+				                objectOutput.writeObject(nameDire); // gửi list path folder wa cho server so sánh
+				                objectOutput.writeObject(ListnameFile3); // gửi list path file wa sv ss
+							}
+							
+							// nhận MD5 từ client
+							Object objectReceive2 = objectInput.readObject();
+							ArrayList<String> listMD5_1 = (ArrayList<String>)objectReceive2;
+//							for(int i = 0; i < ListnameFile1.size(); i++) {
+//								System.out.println(i + ": " + ListnameFile1.get(i));
+//								System.out.println(ListnameFile2.get(i));
+//							}
+							
+							ArrayList<String> FullPath1 = new ArrayList<>();
+							ArrayList<String> SubPath1 = new ArrayList<>();
+							for(int i = 0; i < ListnameFile1.size(); i++) {
+								String temp_check = getMD5(new File(ListnameFile2.get(i)));
+								if(!listMD5_1.contains(temp_check)) {
+									System.out.println("!!!!!!!!!!" + i);
+									System.out.println(ListnameFile1.get(i)); // in ra path con sai nội dung
+									System.out.println(ListnameFile2.get(i)); // full path sai nội dung
+									FullPath1.add(ListnameFile2.get(i));
+									SubPath1.add(ListnameFile1.get(i));
+								}
+							}
+							
+							dos.writeInt(FullPath1.size()); // gửi số lượng file sẽ đồng bộ mới 
+							
+							for(int i = 0; i < FullPath1.size(); i++) {
+								dos.writeUTF(SubPath1.get(i)); // gửi tên file
+								File file_temp = new File(FullPath1.get(i));
+								FileInputStream fileInputStream = new FileInputStream(file_temp.getAbsolutePath());
+								byte[] fileBytes = new byte[(int) file_temp.length()];
+								fileInputStream.read(fileBytes);
+								dos.writeInt(fileBytes.length);
+								dos.write(fileBytes);
+							}
+						} else {
+							System.out.println("Không đồng bộ do thiếu gốc!");
+						}
+						
+					} catch (Exception er) {
+						System.out.println("ERROR24: " + er);
+					}
+				}
+			}
+		});
+		
 		// end main
 	}
 
@@ -409,7 +511,7 @@ public class Client {
 			dos.close();
 			socket.close();
 		} catch (Exception e) {
-			System.out.println("ERROR: " + e);
+			System.out.println("ERROR3: " + e);
 		}
 		return trave;
 	}
@@ -444,12 +546,12 @@ public class Client {
 							dos.writeUTF(name_);
 							DataInputStream dis = new DataInputStream(socket.getInputStream());
 							System.out.println(dis.readUTF());
-							dis.readUTF();
+							LoadData(); // xóa xong load lại để mất
 							dos.close();
 							socket.close();
 							jcShare.setSelectedIndex(0); // reset lại đối với folder thì bị lỗi nên về 0 cho chắc
 						} catch (Exception er) {
-							System.out.println("ERROR: " + er);
+							System.out.println("ERROR6 delete: " + er);
 						}
 						break;
 					}
@@ -460,6 +562,7 @@ public class Client {
 							DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
 			                DataInputStream dis = new DataInputStream(socket.getInputStream());
 							dos.writeUTF("Download");
+							dos.writeUTF(jtTK.getText());
 							if(jcShare.getSelectedIndex()==0) {
 								dos.writeUTF(jtTK.getText());
 							} else {
@@ -538,7 +641,7 @@ public class Client {
 							dos.close();
 							socket.close();
 						} catch (Exception er) {
-							System.out.println("ERROR: " + er);
+							System.out.println("ERROR7: " + er);
 						}
 						break;
 					}
@@ -555,7 +658,7 @@ public class Client {
 							socket.close();
 							LoadListUS();
 						} catch (Exception er) {
-							System.out.println("ERROR: " + er);
+							System.out.println("ERROR8: " + er);
 						}
 						
 						//System.out.println("Mở chia sẻ: " + ((JButton) e.getSource()).getName());
@@ -574,7 +677,7 @@ public class Client {
 							socket.close();
 							LoadListUS();
 						} catch (Exception er) {
-							System.out.println("ERROR: " + er);
+							System.out.println("ERROR9: " + er);
 						}
 						
 						//System.out.println("Đóng Chia sẻ: " + ((JButton) e.getSource()).getName());
@@ -722,7 +825,7 @@ public class Client {
 			dos.close();
 			socket.close();
 		} catch (Exception er) {
-			System.out.println("ERROR: " + er);
+			System.out.println("ERROR10: " + er);
 		}
 	}
 	
@@ -867,5 +970,32 @@ public class Client {
 			}
 		}
 		return s.substring(index+2);
+	}
+	
+	static String getMD5(File file) {
+		MessageDigest md;
+		try {
+			md = MessageDigest.getInstance("MD5");
+			FileInputStream fis = new FileInputStream(file);
+			byte[] dataBytes = new byte[1024];
+			int nread = 0;
+			while ((nread = fis.read(dataBytes)) != -1) {
+				md.update(dataBytes, 0, nread);
+			}
+			byte[] byteData = md.digest();
+			fis.close();
+			return convertByteToHex(byteData);
+		} catch (NoSuchAlgorithmException | IOException e) {
+			e.printStackTrace();
+			throw new RuntimeException(e);
+		}
+	}
+
+	static String convertByteToHex(byte[] data) {
+		StringBuffer sb = new StringBuffer();
+		for (int i = 0; i < data.length; i++) {
+			sb.append(Integer.toString((data[i] & 0xff) + 0x100, 16).substring(1));
+		}
+		return sb.toString();
 	}
 }

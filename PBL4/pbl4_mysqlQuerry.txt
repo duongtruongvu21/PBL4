@@ -2,6 +2,7 @@ CREATE TABLE PhongBan (
 TaiKhoan VARCHAR(255) NOT NULL,
 MatKhau VARCHAR(255) NOT NULL,
 IP VARCHAR(15) NOT NULL,
+TrangThai boolean DEFAULT true,
 PRIMARY KEY (TaiKhoan)
 );
 
@@ -10,6 +11,7 @@ MSDL INT AUTO_INCREMENT,
 TaiKhoan VARCHAR(255) NOT NULL,
 TenDL VARCHAR(255) NOT NULL,
 PathDL VARCHAR(1000) NOT NULL,
+TypeDL VARCHAR(10) NOT NULL,
 FOREIGN KEY (TaiKhoan) REFERENCES PhongBan(TaiKhoan),
 PRIMARY KEY (MSDL)
 );
@@ -51,7 +53,7 @@ INSERT INTO PhongBan(TaiKhoan, MatKhau, IP)
        VALUES ('phongban08', '1', '/192.168.1.12');
        
 INSERT INTO HoatDong(TaiKhoan, HanhVi, DoiTuong)
-       VALUES ('phongban01', 'download', 'CDEF');
+       VALUES ('phongban01', 'Tải về', 'CDEF');
        
 INSERT INTO ChiaSe(TaiKhoanChiaSe, TaiKhoanNhanChiaSe)
        VALUES ('phongban01', 'phongban02');
