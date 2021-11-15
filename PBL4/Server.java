@@ -8,6 +8,8 @@
 package PBL4;
 
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.*;
 import java.net.*;
 import java.security.MessageDigest;
@@ -76,6 +78,33 @@ public class Server {
 		jScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 		jScrollPane.setPreferredSize(new Dimension(10, 625));
 
+		jbSignUp.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				JDialog shareFrame = createFrameSignUp();
+				shareFrame.setVisible(true);
+			}
+		});
+		
+		jbManageUser.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+//				JDialog shareFrame = createFrameShare();
+//				shareFrame.setVisible(true);
+			}
+		});
+		
+		jbManageActivate.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				// TODO Auto-generated method stub
+				
+			}
+		});
+		
 		jpButton.add(jbSignUp);
 		jpButton.add(jbManageUser);
 		jpButton.add(jbManageActivate);
@@ -97,6 +126,109 @@ public class Server {
 			}
 		}
 	}
+	
+	
+	public static JDialog createFrameSignUp() { // sử dụng jdialog để có phương thức setModal, đè lên ưu tiên
+		JDialog jFrame = new JDialog();
+		jFrame.setTitle("Đăng Ký");
+        jFrame.setSize(525, 345);
+		jFrame.setLocationRelativeTo(null);
+		jFrame.setModal(true);
+        JPanel jPanel = new JPanel();
+        jPanel.setLayout(new BoxLayout(jPanel, BoxLayout.Y_AXIS));
+        JLabel jlTitle = new JLabel("Thêm Tài Khoản Phòng Ban");
+        jlTitle.setAlignmentX(Component.CENTER_ALIGNMENT);
+        jlTitle.setFont(new Font("Arial", Font.BOLD, 25));
+        jlTitle.setBorder(new EmptyBorder(20,0,10,0));
+
+        JPanel jpForm = new JPanel();
+        jpForm.setBorder(new EmptyBorder(10, 0, 10, 0));
+        jpForm.setLayout(new BoxLayout(jpForm, BoxLayout.Y_AXIS));
+        
+        JPanel jpUser = new JPanel();
+        jpUser.setBorder(new EmptyBorder(5, 0, 5, 0));
+        jpUser.setLayout(new BoxLayout(jpUser, BoxLayout.X_AXIS));
+        
+        JLabel jlUser = new JLabel("Nhập tài khoản: ");
+        jlUser.setFont(new Font("Arial", Font.BOLD, 20));
+        jlUser.setPreferredSize(new Dimension(240, 40));
+        
+        JTextField jtUser = new JTextField();
+        jtUser.setFont(new Font("Arial", Font.PLAIN, 20));
+        jtUser.setPreferredSize(new Dimension(240, 40));
+        
+        jpUser.add(jlUser);
+        jpUser.add(jtUser);
+        /////////////
+        JPanel jpPass1 = new JPanel();
+        jpPass1.setBorder(new EmptyBorder(5, 0, 5, 0));
+        jpPass1.setLayout(new BoxLayout(jpPass1, BoxLayout.X_AXIS));
+        
+        JLabel jlPass1 = new JLabel("Nhập mật khẩu: ");
+        jlPass1.setFont(new Font("Arial", Font.BOLD, 20));
+        jlPass1.setPreferredSize(new Dimension(240, 40));
+        
+        JTextField jtPass1 = new JTextField();
+        jtPass1.setFont(new Font("Arial", Font.PLAIN, 20));
+        jtPass1.setPreferredSize(new Dimension(240, 40));
+        
+        jpPass1.add(jlPass1);
+        jpPass1.add(jtPass1);
+        
+        /////////////
+	    JPanel jpPass2 = new JPanel();
+	    jpPass2.setBorder(new EmptyBorder(5, 0, 5, 0));
+	    jpPass2.setLayout(new BoxLayout(jpPass2, BoxLayout.X_AXIS));
+	    
+	    JLabel jlPass2 = new JLabel("Xác nhận mật khẩu: ");
+	    jlPass2.setFont(new Font("Arial", Font.BOLD, 20));
+	    jlPass2.setPreferredSize(new Dimension(240, 40));
+	    
+	    JTextField jtPass2 = new JTextField();
+	    jtPass2.setFont(new Font("Arial", Font.PLAIN, 20));
+	    jtPass2.setPreferredSize(new Dimension(240, 40));
+	    
+	    jpPass2.add(jlPass2);
+	    jpPass2.add(jtPass2);
+	    
+        /////////////
+	    JPanel jpIP = new JPanel();
+	    jpIP.setBorder(new EmptyBorder(5, 0, 5, 0));
+	    jpIP.setLayout(new BoxLayout(jpIP, BoxLayout.X_AXIS));
+	    
+	    JLabel jlIP = new JLabel("Nhập IP máy truy cập: ");
+	    jlIP.setFont(new Font("Arial", Font.BOLD, 20));
+	    jlIP.setPreferredSize(new Dimension(240, 40));
+	    
+	    JTextField jtIP = new JTextField();
+	    jtIP.setFont(new Font("Arial", Font.PLAIN, 20));
+	    jtIP.setPreferredSize(new Dimension(240, 40));
+	    
+	    jpIP.add(jlIP);
+	    jpIP.add(jtIP);
+        
+        JPanel jpButton = new JPanel();
+        jpButton.setBorder(new EmptyBorder(10, 0, 10, 0));
+        jpButton.setLayout(new BoxLayout(jpButton, BoxLayout.X_AXIS));
+        
+        JButton jbOK = new JButton("   Tạo   ");
+        jbOK.setPreferredSize(new Dimension(200, 40));
+        jbOK.setFont(new Font("Arial", Font.BOLD, 20));
+        
+        jpButton.add(jbOK);
+        
+        jpForm.add(jpUser);
+        jpForm.add(jpPass1);
+        jpForm.add(jpPass2);
+        jpForm.add(jpIP);
+        
+        jPanel.add(jlTitle);
+        jPanel.add(jpForm);
+        jPanel.add(jpButton);
+        jFrame.add(jPanel);
+        return jFrame;
+    }
+	
 }
 
 class XuLyClientServer implements Runnable {
@@ -170,7 +302,8 @@ class XuLyClientServer implements Runnable {
 			}
 			case "SendFile": {
 				try {
-					String tk = dis.readUTF();
+					String tk_temp = dis.readUTF(); // thằng gửi lên
+					String tk = dis.readUTF(); // lưu vào thư mục của thằng (do có thể gửi vào public)
 					String nameFile = dis.readUTF();
 					System.out.println(tk + " gửi tệp tin: " + nameFile);
 					String pathFile = dis.readUTF(); // xử lý lưu vào db để biết vị trí đồng bộ
@@ -182,7 +315,10 @@ class XuLyClientServer implements Runnable {
 					fileOutputStream.write(fileContentBytes);
 					fileOutputStream.close();
 					BO bo = new BO();
-					bo.addNewData(tk, nameFile, pathFile, "File");
+					if(!tk.equals("public")) {
+						bo.addNewData(tk, nameFile, pathFile, "File");
+					}
+					bo.addRecord(tk_temp, "Gửi lên", "Vào: " + tk + ", File: " + fileToDownload.getName());
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -192,6 +328,7 @@ class XuLyClientServer implements Runnable {
 			}
 			case "SendFolder": {
 				try {
+					String tk_temp = dis.readUTF();
 					String tk = dis.readUTF();
 					String nameFolder = dis.readUTF();
 					System.out.println(tk + " gửi thư mục: " + nameFolder);
@@ -223,7 +360,10 @@ class XuLyClientServer implements Runnable {
 						fileOutputStream.close();
 					}
 					BO bo = new BO();
-					bo.addNewData(tk, nameFolder, pathFolder, "Folder");
+					if(!tk.equals("public")) {
+						bo.addNewData(tk, nameFolder, pathFolder, "Folder");
+					}
+					bo.addRecord(tk_temp, "Gửi lên", "Vào: " + tk + ", Folder: " + newfolder.getName());
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -250,6 +390,8 @@ class XuLyClientServer implements Runnable {
 					dos.write(fileBytes);
 					dos.writeUTF("Success");
 					dos.close();
+					BO bo = new BO();
+					bo.addRecord(tk0, "Tải Xuống", "(" + tk + ") File: " + fileDown.getName());
 				} else {
 					System.out.println(tk0 + " tải thư mục: " + name_);
 					DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
@@ -277,22 +419,30 @@ class XuLyClientServer implements Runnable {
 					dos.writeUTF("Success");
 					objectOutput.close();
 					dos.close();
+					BO bo = new BO();
+					bo.addRecord(tk0, "Tải Xuống", "(" + tk + ") Folder: " + fileDown.getName());
 				}
+				
 				dis.close();
 				socket.close();
 				break;
 			}
 			case "Delete": { // tạm
+				String tk_temp = dis.readUTF();
 				String tk = dis.readUTF();
 				String name_ = dis.readUTF();
 				BO bo = new BO();
-				bo.delData(tk, name_);
+				if(!tk.equals("public")) {
+					bo.delData(tk, name_);
+				}
 				File fileDele = new File(getPathFileByName(name_, tk));
 				if (fileDele.isFile()) {
 					fileDele.delete();
+					bo.addRecord(tk_temp, "Xóa", "(" + tk + ") File: " + fileDele.getName());
 					System.out.println(tk + " xóa tệp tin: " + name_);
 				} else {
 					deleteFolder(fileDele);
+					bo.addRecord(tk_temp, "Xóa", "(" + tk + ") Folder: " + fileDele.getName());
 					System.out.println(tk + " xóa thư mục: " + name_);
 				}
 				DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
@@ -333,7 +483,7 @@ class XuLyClientServer implements Runnable {
 				System.out.println(tk1 + " mở chia sẻ " + tk2);
 				BO bo = new BO();
 				bo.AddShare(tk1, tk2);
-				dis.close();
+				bo.addRecord(tk1, "Mở Sẻ Chia", tk2);
 				socket.close();
 				break;
 			}
@@ -344,6 +494,7 @@ class XuLyClientServer implements Runnable {
 				System.out.println(tk1 + " đóng chia sẻ " + tk2);
 				BO bo = new BO();
 				bo.DelShare(tk1, tk2);
+				bo.addRecord(tk1, "Đóng Sẻ Chia", tk2);
 				dis.close();
 				socket.close();
 				break;
@@ -357,6 +508,9 @@ class XuLyClientServer implements Runnable {
 				System.out.println(tk1 + " copy: " + tk2 + "_._" + name_);
 				File fileCopy = new File(getPathFileByName(name_, tk2));
 				File fileCopynew = new File(pathRootServer + "\\" + tk1 + "\\" + fileCopy.getName());
+
+				BO bo = new BO();
+				bo.addRecord(tk1, "Sao Chép", "Của: " + tk2 + ": " + fileCopy.getName());
 				
 				copyFolder(fileCopy, fileCopynew);
 				dis.close();
@@ -367,42 +521,64 @@ class XuLyClientServer implements Runnable {
 			case "Synchronize": {
 				String tk = dis.readUTF(); // tên người request
 				System.out.println(tk + " đồng bộ dữ liệu");
+				
 				BO bo = new BO();
+				
+				bo.addRecord(tk, "Đồng Bộ", tk);
+				
 				ArrayList<String> listNamePath = bo.getListNamePathFolderData(tk);
 				ArrayList<String> listPath = bo.getListPathFolderData(tk);
+				ArrayList<String> listNamePath2 = bo.getListNamePathFileData(tk);
+				ArrayList<String> listPath2 = bo.getListPathFileData(tk);
 				try {
 					System.out.println("ĐB");
+					System.out.println("11189");
 					ArrayList<String> temp3 = new ArrayList<>(); // chứa link folder của client gửi dề, để check cái nào không tồn tại nữa thì xóa
 					ArrayList<String> temp4 = new ArrayList<>(); // chứa link file của client gửi dề, để check cái nào không tồn tại nữa thì xóa
 					ObjectOutputStream objectOutput = new ObjectOutputStream(socket.getOutputStream());
+					System.out.println("1145");
 					objectOutput.writeObject(listPath); // gửi qua path các thư mục đã tải lên
-					
+					objectOutput.writeObject(listPath2); // gửi qua path các file đã tải lên
 					Boolean check = dis.readBoolean();
 					
 					if(check) { // nếu các mục gốc còn giữ được
+						System.out.println("11");
 						for (int i = 0; i < listPath.size(); i++) {
+							System.out.println("1110");
 							temp3.add(listNamePath.get(i));
 							// nhận lại full path cho từng path lớn... tạo thêm nếu có mới
 							File newfolder = new File(pathRootServer + "\\" + tk + "\\" + listNamePath.get(i));
 							ObjectInputStream objectInput = new ObjectInputStream(socket.getInputStream());
+
+							System.out.println("1115");
 							Object objectReceive = objectInput.readObject(); // chứa list path folder của clt
 							ArrayList<String> NameFolderList = (ArrayList<String>) objectReceive;
 							Object objectReceive2 = objectInput.readObject(); // chứa list path file của clt
 							ArrayList<String> NameFileList = (ArrayList<String>) objectReceive2;
+							System.out.println("1116");
 							for (int j = 0; j < NameFolderList.size(); j++) {
+								System.out.println("111a");
 								File new_folder = new File(newfolder + "\\" + NameFolderList.get(j));
+								System.out.println("111f");
 								temp3.add(listNamePath.get(i) + "\\" + NameFolderList.get(j));
-								temp4.add(listNamePath.get(i) + "\\" + NameFileList.get(j));
+								System.out.println("111b");
 								if (!new_folder.exists()) {
 									new_folder.mkdirs();
 								}
 							}
-							
+							System.out.println("111");
 							for (int j = 0; j < NameFileList.size(); j++) {
 								temp4.add(listNamePath.get(i) + "\\" + NameFileList.get(j));
 							}
+							System.out.println("112");
 						}
-
+						
+						if(listNamePath2.size() > 0) {
+							for (int j = 0; j < listNamePath2.size(); j++) {
+								temp4.add(listNamePath2.get(j));
+							}
+						}
+						
 						File folderTK = new File(pathRootServer + "\\" + tk);
 						ArrayList<String> temp1 = new ArrayList<>(); // chứa link file ở sv
 						ArrayList<String> temp2 = new ArrayList<>(); // chứa link folder ở sv
@@ -424,7 +600,7 @@ class XuLyClientServer implements Runnable {
 								System.out.println("\nTên file này không có ở clt: " + folderTK + "\\" + temp1.get(i));
 							}
 						}
-						
+						System.out.print("\n");
 						// lấy hết mã MD5 của các file, gửi qua client so sánh, nếu khác nhận lại 
 						// file của client về khởi tạo.
 						File arr[] = folderTK.listFiles();
@@ -620,6 +796,24 @@ class XuLyClientServer implements Runnable {
 
 
 class BO { ///// SQLLLLLLL
+	
+	public void addRecord(String tk, String doSt, String obj) {
+		try {
+			Class.forName("com.mysql.cj.jdbc.Driver");
+			String url = "jdbc:mysql://localhost:3306/pbl4";
+			Connection con = DriverManager.getConnection(url, "root", "");
+			PreparedStatement ps;
+			ps = con.prepareStatement("insert into HoatDong(TaiKhoan, HanhVi, DoiTuong) VALUES (?, ?, ?);");
+			ps.setString(1, tk);
+			ps.setString(2, doSt);
+			ps.setString(3, obj);
+			ps.executeUpdate();
+			ps.close();
+		} catch (Exception e) {
+			System.out.println("ERROR21: " + e);
+		}
+	}
+	
 	public int checkLogin(String tk, String mk, String ip) {
 		int trave = 0;
 		try {
@@ -802,6 +996,30 @@ class BO { ///// SQLLLLLLL
 		}
 		return trave;
 	}
+	
+	public ArrayList<String> getListPathFileData(String tk) {
+		// trả về list path thư mục của client gửi qua
+		ArrayList<String> trave = new ArrayList<String>();
+		try {
+			Class.forName("com.mysql.cj.jdbc.Driver");
+			String url = "jdbc:mysql://localhost:3306/pbl4";
+			Connection con = DriverManager.getConnection(url, "root", "");
+			PreparedStatement ps;
+			ps = con.prepareStatement("select * from dulieu where TaiKhoan = ? and TypeDL = 'File';");
+			ps.setString(1, tk);
+			ResultSet rs = ps.executeQuery();
+			while (rs.next()) {
+				String path = rs.getString("PathDL");
+				trave.add(path);
+			}
+			rs.close();
+			ps.close();
+		} catch (Exception e) {
+			System.out.println("ERROR1245: " + e);
+		}
+		return trave;
+	}
+	
 	public ArrayList<String> getListNamePathFolderData(String tk) {
 		// trả về tên thư mục của client gửi qua
 		ArrayList<String> trave = new ArrayList<String>();
@@ -821,6 +1039,29 @@ class BO { ///// SQLLLLLLL
 			ps.close();
 		} catch (Exception e) {
 			System.out.println("ERROR10: " + e);
+		}
+		return trave;
+	}
+	
+	public ArrayList<String> getListNamePathFileData(String tk) {
+		// trả về tên thư mục của client gửi qua
+		ArrayList<String> trave = new ArrayList<String>();
+		try {
+			Class.forName("com.mysql.cj.jdbc.Driver");
+			String url = "jdbc:mysql://localhost:3306/pbl4";
+			Connection con = DriverManager.getConnection(url, "root", "");
+			PreparedStatement ps;
+			ps = con.prepareStatement("select * from dulieu where TaiKhoan = ? and TypeDL = 'File';");
+			ps.setString(1, tk);
+			ResultSet rs = ps.executeQuery();
+			while (rs.next()) {
+				String path = rs.getString("TenDL");
+				trave.add(path);
+			}
+			rs.close();
+			ps.close();
+		} catch (Exception e) {
+			System.out.println("ERROR17: " + e);
 		}
 		return trave;
 	}

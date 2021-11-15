@@ -268,6 +268,7 @@ public class Client {
 						Socket socket = new Socket(host, port);
 						DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
 						dos.writeUTF("SendFile");
+						dos.writeUTF(jtTK.getText());
 						if(jcShare.getSelectedIndex()==0) {
 							dos.writeUTF(jtTK.getText());
 						} else {
@@ -318,6 +319,7 @@ public class Client {
 						Socket socket = new Socket(host, port);
 						DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
 						dos.writeUTF("SendFolder");
+						dos.writeUTF(jtTK.getText());
 						if(jcShare.getSelectedIndex()==0) {
 							dos.writeUTF(jtTK.getText());
 						} else {
@@ -424,18 +426,47 @@ public class Client {
 						Object objectReceive = objectInput.readObject();
 						ArrayList<String> listPath = (ArrayList<String>)objectReceive;
 						
+						Object objectReceive278 = objectInput.readObject();
+						ArrayList<String> listPath2 = (ArrayList<String>)objectReceive278;
+						
 						for (int j = 0; j < listPath.size(); j++) {
-							File new_folder = new File(listPath.get(j));
-							if (!new_folder.exists()) {
-								checkBoolean = false;
+							try {
+								File new_folder = new File(listPath.get(j));
+								if (!new_folder.exists()) {
+									checkBoolean = false;
+								}
+							} catch (Exception e2) {
+								// TODO: handle exception
 							}
 						}
+						
+						for (int j = 0; j < listPath2.size(); j++) {
+							try {
+								File new_folder = new File(listPath2.get(j));
+								if (!new_folder.exists()) {
+									checkBoolean = false;
+								}
+							} catch (Exception e2) {
+								// TODO: handle exception
+							}
+						}
+						
 						dos.writeBoolean(checkBoolean);
 						if(checkBoolean) { // nếu đủ thư mục gốc thì gửi đi
 							//System.out.println("ĐB" + listPath.size());
 							ArrayList<String> ListnameFile1 = new ArrayList<>();
 							ArrayList<String> ListnameFile2 = new ArrayList<>();
 							ArrayList<String> ListnameFile3 = new ArrayList<>();
+							
+							for (int j = 0; j < listPath2.size(); j++) {
+								try {
+									File new_folder = new File(listPath2.get(j));
+									ListnameFile3.add(new_folder.getName());
+								} catch (Exception e2) {
+									// TODO: handle exception
+								}
+							}
+							
 							for(int i = 0; i < listPath.size(); i++) {
 								File tempFile = new File(listPath.get(i));
 								File arr[] = tempFile.listFiles();
@@ -534,6 +565,7 @@ public class Client {
 							Socket socket = new Socket(host, port);
 							DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
 							dos.writeUTF("Delete");
+							dos.writeUTF(jtTK.getText());
 							if(jcShare.getSelectedIndex()==0) {
 								dos.writeUTF(jtTK.getText());
 							} else {
