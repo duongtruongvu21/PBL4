@@ -41,6 +41,10 @@ public class Client {
 			folderRootClient.mkdirs();
         }
 		
+		JPanel jPanel = new JPanel();
+		jPanel.setLayout(new BoxLayout(jPanel, BoxLayout.Y_AXIS));
+		jPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
+		
 		final File[] fileToSend = new File[1];
 		final File[] folderToSend = new File[1];
 		JButton jbChooseFile, jbChooseFolder, jbSendFile, jbSendFolder, jbShare, jbSynch;
@@ -168,12 +172,13 @@ public class Client {
 
 		// jpShowFileServer.add(jpShowFileServer);
 
-		jFrame.add(jlTitle);
-		jFrame.add(jpConnect);
-		jFrame.add(jlFileName);
-		jFrame.add(jpButton);
-		jFrame.add(jlDataServer);
-		jFrame.add(jScrollPane);
+		jPanel.add(jlTitle);
+		jPanel.add(jpConnect);
+		jPanel.add(jlFileName);
+		jPanel.add(jpButton);
+		jPanel.add(jlDataServer);
+		jPanel.add(jScrollPane);
+		jFrame.add(jPanel);
 		jFrame.setVisible(true);
 
 		jbConnect.addActionListener(new ActionListener() {
@@ -462,6 +467,8 @@ public class Client {
 								try {
 									File new_folder = new File(listPath2.get(j));
 									ListnameFile3.add(new_folder.getName());
+									ListnameFile1.add(new_folder.getName());
+									ListnameFile2.add(new_folder.getPath());
 								} catch (Exception e2) {
 									// TODO: handle exception
 								}
@@ -988,7 +995,7 @@ public class Client {
 			dos.close();
 			socket.close();
 		} catch (Exception er) {
-			er.printStackTrace();
+			System.out.println("ERROR1221: " + er);
 		}
 	}
 	

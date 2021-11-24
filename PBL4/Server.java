@@ -5,6 +5,9 @@
  * 
  */
 
+
+//SELECT * FROM `hoatdong` ORDER BY MSHD DESC LIMIT 30
+
 package PBL4;
 
 import java.awt.*;
@@ -12,6 +15,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
 import java.net.*;
+import java.nio.file.Files;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
@@ -19,23 +23,36 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.table.DefaultTableModel;
+
+import com.toedter.calendar.JDateChooser;
+import com.toedter.calendar.JTextFieldDateEditor;
 
 public class Server {
+	static JTable jTShowNotify;
+	static JPanel jpListUser;
+	static JFrame jFrame;
 	public static void main(String[] args) throws IOException {
 		ServerSocket serverSocket = new ServerSocket(56789);
-
-		JFrame jFrame;
+		
 		JButton jbSignUp, jbManageUser, jbManageActivate;
 		JLabel jlTitle, jlNotify, jlInfo;
-		JPanel jpShowNotify, jpButton;
+		JPanel jpButton;
 		JScrollPane jScrollPane;
 
+		JPanel jPanel = new JPanel();
+		jPanel.setLayout(new BoxLayout(jPanel, BoxLayout.Y_AXIS));
+		jPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
+		
 		jFrame = new JFrame("Server GUI");
-		jFrame.setSize(750, 900);
+		jFrame.setSize(1000, 900);
 		jFrame.setLocationRelativeTo(null);
 		jFrame.setLayout(new BoxLayout(jFrame.getContentPane(), BoxLayout.Y_AXIS));
 		jFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -67,16 +84,32 @@ public class Server {
 		jbManageActivate.setFont(new Font("Arial", Font.BOLD, 20));
 
 		jlNotify = new JLabel("Thông báo");
-		jlNotify.setFont(new Font("Arial", Font.BOLD, 20));
+		jlNotify.setFont(new Font("Arial", Font.BOLD, 32));
 		jlNotify.setBorder(new EmptyBorder(20, 0, 0, 0));
 		jlNotify.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-		jpShowNotify = new JPanel();
-		jpShowNotify.setBorder(new EmptyBorder(10, 0, 10, 0));
-		jpShowNotify.setLayout(new BoxLayout(jpShowNotify, BoxLayout.Y_AXIS));
-		jScrollPane = new JScrollPane(jpShowNotify);
+
+		DefaultTableModel model = new DefaultTableModel();
+        model.addColumn("Thời Gian");
+        model.addColumn("Tài Khoản");
+        model.addColumn("Hành Động");
+        model.addColumn("Đối Tượng");
+        jTShowNotify = new JTable(model);
+        jTShowNotify.setBorder(new EmptyBorder(10, 10, 10, 10));
+        jTShowNotify.setLayout(new BoxLayout(jTShowNotify, BoxLayout.Y_AXIS));
+        jTShowNotify.setRowHeight(32);
+        jTShowNotify.setFont(new Font("Roboto", Font.ITALIC, 20));
+        jTShowNotify.setEnabled(false);
+		
+        jTShowNotify.getColumnModel().getColumn(0).setPreferredWidth(132);
+        jTShowNotify.getColumnModel().getColumn(1).setPreferredWidth(50);
+        jTShowNotify.getColumnModel().getColumn(2).setPreferredWidth(50);
+        jTShowNotify.getColumnModel().getColumn(3).setPreferredWidth(320);
+		
+		jScrollPane = new JScrollPane(jTShowNotify);
 		jScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 		jScrollPane.setPreferredSize(new Dimension(10, 625));
+		//jScrollPane.setBorder(new EmptyBorder(10, 10, 10, 10));
 
 		jbSignUp.addActionListener(new ActionListener() {
 			
@@ -101,7 +134,8 @@ public class Server {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				// TODO Auto-generated method stub
-				
+				JDialog AtvtFrame = createFrameActivity();
+				AtvtFrame.setVisible(true);
 			}
 		});
 		
@@ -109,20 +143,26 @@ public class Server {
 		jpButton.add(jbManageUser);
 		jpButton.add(jbManageActivate);
 		
-		jFrame.add(jlTitle);
-		jFrame.add(jlInfo);
-		jFrame.add(jpButton);
-		jFrame.add(jlNotify);
-		jFrame.add(jScrollPane);
+		jPanel.add(jlTitle);
+		jPanel.add(jlInfo);
+		jPanel.add(jpButton);
+		jPanel.add(jlNotify);
+		jPanel.add(jScrollPane);
+		jFrame.add(jPanel);
 		jFrame.setVisible(true);
 
+
+		LoadContentMainForm();
+		int flagg = 0;
+		
 		while (true) {
 			try {
 				Socket socket = serverSocket.accept();
+				if((flagg++) % 2 == 0) LoadContentMainForm();
 				Thread mainThread = new Thread(new XuLyClientServer(socket));
 				mainThread.start();
 			} catch (IOException e) {
-				e.printStackTrace();
+				System.out.println("ERROR0001: " + e);
 			}
 		}
 	}
@@ -211,7 +251,7 @@ public class Server {
         jpButton.setBorder(new EmptyBorder(10, 0, 10, 0));
         jpButton.setLayout(new BoxLayout(jpButton, BoxLayout.X_AXIS));
         
-        JButton jbOK = new JButton("   Tạo   ");
+        JButton jbOK = new JButton("   Thêm Mới   ");
         jbOK.setPreferredSize(new Dimension(200, 40));
         jbOK.setFont(new Font("Arial", Font.BOLD, 20));
         
@@ -229,6 +269,222 @@ public class Server {
         return jFrame;
     }
 	
+	public static JDialog createFrameActivity() { // sử dụng jdialog để có phương thức setModal, đè lên ưu tiên
+		JDialog jFrame = new JDialog();
+		jFrame.setTitle("Kiểm Tra Hoạt Động");
+        jFrame.setSize(800, 700);
+		jFrame.setLocationRelativeTo(null);
+		jFrame.setModal(true);
+		
+		JPanel jPanel = new JPanel();
+		jPanel.setLayout(new BoxLayout(jPanel, BoxLayout.Y_AXIS));
+		jPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
+		
+        JPanel jpSetDate = new JPanel();
+        jpSetDate.setLayout(new BoxLayout(jpSetDate, BoxLayout.X_AXIS));
+        jpSetDate.setBorder(new EmptyBorder(10, 0, 10, 0));
+        
+        JDateChooser jdateChooser1 = new JDateChooser();
+        jdateChooser1.setPreferredSize(new Dimension(100, 40));
+        jdateChooser1.setFont(new Font("Arial", Font.BOLD, 20));
+        jdateChooser1.setBorder(new EmptyBorder(0, 5, 0, 5));
+        JDateChooser jdateChooser2 = new JDateChooser();
+        jdateChooser2.setPreferredSize(new Dimension(100, 40));
+        jdateChooser2.setFont(new Font("Arial", Font.BOLD, 20));
+        jdateChooser2.setBorder(new EmptyBorder(0, 5, 0, 10));
+        
+        JButton jbSearch = new JButton("  Lọc  ");
+        jbSearch.setPreferredSize(new Dimension(200, 40));
+		jbSearch.setFont(new Font("Arial", Font.BOLD, 20));
+		jbSearch.setBorder(new EmptyBorder(10, 10, 10, 10));
+        
+        try { // cài mặc định ngày trước và tắt không cho sửa text trong jdate
+        	jdateChooser1.setDate(new Date("01 Jan 2001"));
+        	jdateChooser2.setDate(java.util.Calendar.getInstance().getTime());
+            JTextFieldDateEditor editor = (JTextFieldDateEditor) jdateChooser1.getDateEditor();
+            editor.setEditable(false);
+            JTextFieldDateEditor editor2 = (JTextFieldDateEditor) jdateChooser2.getDateEditor();
+            editor2.setEditable(false);
+		} catch (Exception e) {
+			System.out.println("ERRRRR");
+		}
+        
+        JPanel jpsetInfo = new JPanel();
+        jpsetInfo.setLayout(new BoxLayout(jpsetInfo, BoxLayout.X_AXIS));
+        jpsetInfo.setBorder(new EmptyBorder(10, 0, 10, 0));
+        
+        JTextField jtUserName = new JTextField("PhongBan00");
+        jtUserName.setPreferredSize(new Dimension(200, 40));
+        jtUserName.setFont(new Font("Arial", Font.PLAIN, 20));
+        
+        JComboBox jcDoSth = new JComboBox();
+        jcDoSth.setPreferredSize(new Dimension(200, 40));
+        jcDoSth.setFont(new Font("Arial", Font.BOLD, 20));
+        jcDoSth.addItem("Tất Cả");
+        jcDoSth.addItem("Tải Về");
+        
+        DefaultTableModel model = new DefaultTableModel();
+        model.addColumn("Thời Gian");
+        model.addColumn("Tài Khoản");
+        model.addColumn("Hành Động");
+        model.addColumn("Đối Tượng");
+        
+        JTable jTContent = new JTable(model);
+        jTContent.setBorder(new EmptyBorder(10, 0, 10, 0));
+        jTContent.setLayout(new BoxLayout(jTContent, BoxLayout.Y_AXIS));
+        jTContent.setRowHeight(32);
+        jTContent.setFont(new Font("Roboto", Font.ITALIC, 20));
+        jTContent.setEnabled(false);
+		
+        jTContent.getColumnModel().getColumn(0).setPreferredWidth(132);
+        jTContent.getColumnModel().getColumn(1).setPreferredWidth(50);
+        jTContent.getColumnModel().getColumn(2).setPreferredWidth(50);
+        jTContent.getColumnModel().getColumn(3).setPreferredWidth(320);
+        JScrollPane jsContent = new JScrollPane(jTContent);
+        jsContent.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+        jsContent.setPreferredSize(new Dimension(10, 640));
+        
+        
+        
+        jpSetDate.add(jdateChooser1);
+        jpSetDate.add(jdateChooser2);
+        jpSetDate.add(jbSearch);
+        
+        jpsetInfo.add(jtUserName);
+        jpsetInfo.add(jcDoSth);
+
+        jPanel.add(jpsetInfo);
+        jPanel.add(jpSetDate);
+        jPanel.add(jsContent);
+        jFrame.add(jPanel);
+        
+        //DateFormat dateFormatYMD = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+        //DateFormat dateFormatMDY = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
+        
+        jbSearch.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				// TODO Auto-generated method stub
+				DefaultTableModel dtm = (DefaultTableModel) jTContent.getModel();
+		        DateFormat dateFormatYMD = new SimpleDateFormat("yyyy/MM/dd");
+		        String day1 = dateFormatYMD.format(jdateChooser1.getDate());
+		        String day2 = dateFormatYMD.format(jdateChooser2.getDate());
+				dtm.setRowCount(0);
+				BO bo = new BO();
+				ArrayList<HoatDong> listContent = bo.getSelectedActivity(jtUserName.getText(), "", day1, day2);
+				for(int i = 0; i < listContent.size(); i++) {
+					//DefaultTableModel model = (DefaultTableModel) jTShowNotify.getModel();
+					String tg = listContent.get(i).getThoiGian();
+					String tk = listContent.get(i).getTaiKhoan();
+					String hv = listContent.get(i).getHanhVi();
+					String dt = listContent.get(i).getDoiTuong();
+					dtm.addRow(new Object[]{tg, tk, hv, dt});
+				}
+				jFrame.validate();
+			}
+		});
+        
+        return jFrame;
+    }
+	
+//	public static JDialog createFrameShare() {
+//		JDialog jFrame = new JDialog();
+//        jFrame.setSize(525, 525);
+//		jFrame.setLocationRelativeTo(null);
+//		jFrame.setModal(true);
+//        JPanel jPanel = new JPanel();
+//        jPanel.setLayout(new BoxLayout(jPanel, BoxLayout.Y_AXIS));
+//        JLabel jlTitle = new JLabel("Quản Lý Người Dùng:");
+//        jlTitle.setAlignmentX(Component.CENTER_ALIGNMENT);
+//        jlTitle.setFont(new Font("Arial", Font.BOLD, 25));
+//        jlTitle.setBorder(new EmptyBorder(20,0,10,0));
+//
+//        jpListUser = new JPanel();
+//        jpListUser.setBorder(new EmptyBorder(10, 0, 10, 0));
+//        jpListUser.setLayout(new BoxLayout(jpListUser, BoxLayout.Y_AXIS));
+//		JScrollPane js = new JScrollPane(jpListUser);
+//		js.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+//		js.setPreferredSize(new Dimension(10, 400));
+//        
+//        jPanel.add(jlTitle);
+//        jPanel.add(js);
+//        jFrame.add(jPanel);
+//        
+//        
+//        jpListUser.removeAll();
+//        jpListUser.revalidate();
+//        jpListUser.repaint();
+//		LoadListUS();
+//        return jFrame;
+//    }
+//	
+//	static void LoadListUS() {
+//		try {
+//			ArrayList<String> ListUSShare = (ArrayList<String>) objectReceive;
+//			
+//			for (int i = 0; i < ListUSShare.size(); i++) {
+//				JPanel jpFileRow = new JPanel();
+//				jpFileRow.setLayout(new BoxLayout(jpFileRow, BoxLayout.X_AXIS));
+//
+//				JLabel jlFileName = new JLabel("        " + ListUSShare.get(i) + "                  ");
+//				jlFileName.setFont(new Font("Roboto", Font.ITALIC, 21));
+//				jlFileName.setBorder(new EmptyBorder(10, 0, 10, 0));
+//				jpFileRow.setAlignmentX(Component.LEFT_ALIGNMENT);
+//				jpFileRow.setName("" + ListUSShare.get(i));
+//
+//				JButton jbOpen = new JButton("Mở CS");
+//				jbOpen.setPreferredSize(new Dimension(100, 24));
+//				jbOpen.setFont(new Font("Arial", Font.BOLD, 16));
+//				jbOpen.setName("" + ListUSShare.get(i));
+//
+//				JButton jbClose = new JButton("Đóng CS");
+//				jbClose.setPreferredSize(new Dimension(100, 24));
+//				jbClose.setFont(new Font("Arial", Font.BOLD, 16));
+//				jbClose.setName("" + ListUSShare.get(i));
+//				jpFileRow.addMouseListener(getMouseListener("Click"));
+//				jbOpen.addMouseListener(getMouseListener("OpenShare"));
+//				jbClose.addMouseListener(getMouseListener("CloseShare"));
+//				// Add everything.
+//				
+//				jpFileRow.add(jlFileName);
+//				jpFileRow.add(jbOpen);
+//				jpFileRow.add(jbClose);
+//				
+//				if(ListCheck.get(i)) {
+//					jbOpen.setEnabled(false);
+//					jbClose.setEnabled(true);
+//				} else {
+//					jbOpen.setEnabled(true);
+//					jbClose.setEnabled(false);
+//				}
+//				
+//				if(!jtTK.getText().equals(ListUSShare.get(i))) {
+//					jpListUser.add(jpFileRow);
+//				}
+//			}
+//			dos.close();
+//			socket.close();
+//		} catch (Exception er) {
+//			System.out.println("ERROR1221: " + er);
+//		}
+//	}
+	
+	public static void LoadContentMainForm() {
+		DefaultTableModel dtm = (DefaultTableModel) jTShowNotify.getModel();
+		dtm.setRowCount(0);
+		BO bo = new BO();
+		ArrayList<HoatDong> listContent = bo.get100ActivityNewest();
+		for(int i = 0; i < listContent.size(); i++) {
+			DefaultTableModel model = (DefaultTableModel) jTShowNotify.getModel();
+			String tg = listContent.get(i).getThoiGian();
+			String tk = listContent.get(i).getTaiKhoan();
+			String hv = listContent.get(i).getHanhVi();
+			String dt = listContent.get(i).getDoiTuong();
+	        model.addRow(new Object[]{tg, tk, hv, dt});
+		}
+		jFrame.validate();
+	}
 }
 
 class XuLyClientServer implements Runnable {
@@ -262,7 +518,8 @@ class XuLyClientServer implements Runnable {
 				String mk = dis.readUTF();
 				DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
 				BO bo = new BO();
-				dos.writeInt(bo.checkLogin(tk, mk, socket.getLocalAddress().toString()));
+				dos.writeInt(bo.checkLogin(tk, mk, getHostsubPort(socket.getRemoteSocketAddress().toString())));
+				//bo.addRecord(tk, mk, getHostsubPort(socket.getRemoteSocketAddress().toString()));
 				dos.close();
 				dis.close();
 				socket.close();
@@ -318,7 +575,7 @@ class XuLyClientServer implements Runnable {
 					if(!tk.equals("public")) {
 						bo.addNewData(tk, nameFile, pathFile, "File");
 					}
-					bo.addRecord(tk_temp, "Gửi lên", "Vào: " + tk + ", File: " + fileToDownload.getName());
+					bo.addRecord(tk_temp, "Gửi lên", tk + ", File: " + fileToDownload.getName());
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -363,7 +620,7 @@ class XuLyClientServer implements Runnable {
 					if(!tk.equals("public")) {
 						bo.addNewData(tk, nameFolder, pathFolder, "Folder");
 					}
-					bo.addRecord(tk_temp, "Gửi lên", "Vào: " + tk + ", Folder: " + newfolder.getName());
+					bo.addRecord(tk_temp, "Gửi lên", tk + ", Folder: " + newfolder.getName());
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -585,22 +842,32 @@ class XuLyClientServer implements Runnable {
 						
 						getChild(folderTK.listFiles(), 0, "", temp1, temp2);
 						
-						for (int i = 0; i < temp2.size(); i++) {
-							if (temp3.contains(temp2.get(i))) {
-								System.out.print(".");
-							} else {
-								System.out.println("\nTên fol này không có ở clt: " + folderTK + "\\" + temp2.get(i));
-							}
-						}
-						
-						for (int i = 0; i < temp1.size(); i++) {
+
+						for (int i = 0; i < temp1.size(); i++) { // so sánh list tên file, cái nào không còn thì xóa
 							if (temp4.contains(temp1.get(i))) {
 								System.out.print(".");
 							} else {
+								File fileDele = new File(folderTK + "\\" + temp1.get(i));
+								if(fileDele.exists()) {
+									fileDele.delete();
+								}
 								System.out.println("\nTên file này không có ở clt: " + folderTK + "\\" + temp1.get(i));
 							}
 						}
 						System.out.print("\n");
+						
+						for (int i = 0; i < temp2.size(); i++) { // so sánh list tên folder, cái nào không còn thì xóa
+							if (temp3.contains(temp2.get(i))) {
+								System.out.print(".");
+							} else {
+								File fileDele = new File(folderTK + "\\" + temp2.get(i));
+								if(fileDele.exists()) {
+									deleteFolder(fileDele);
+								}
+								System.out.println("\nTên fol này không có ở clt: " + folderTK + "\\" + temp2.get(i));
+							}
+						}
+						
 						// lấy hết mã MD5 của các file, gửi qua client so sánh, nếu khác nhận lại 
 						// file của client về khởi tạo.
 						File arr[] = folderTK.listFiles();
@@ -666,15 +933,43 @@ class XuLyClientServer implements Runnable {
 		ArrayList<String> trave = new ArrayList<String>();
 		File[] files = folderForTK.listFiles();
 		for (File file : files) {
+			long sizze = getDirectorySizeLegacy(file);
+			sizze = sizze / 1024 + 1;
+			String sizee = "";
+			if(sizze > 1024 * 1024) {
+				int si = (int)sizze * 100 / (1024*1024);
+				sizee = (si * 1.0 / 100) + "Gb";
+			} else {
+				if(sizze > 1024) {
+					int si = (int)sizze * 100 / (1024);
+					sizee = (si * 1.0 / 100) + "Mb";
+				} else {
+					sizee = sizze + "Kb";
+				}
+			}
 			if (file.isFile()) {
-				trave.add("Tệp: " + file.getName());
+				trave.add("(" + sizee + ") Tệp: " + file.getName());
 			}
 			if (file.isDirectory()) {
-				trave.add("Thư mục: " + file.getName());
+				trave.add("(" + sizee + ") Thư mục: " + file.getName());
 			}
 		}
 		return trave;
 	}
+	
+	public static long getDirectorySizeLegacy(File dir) {
+	      long length = 0;
+	      File[] files = dir.listFiles();
+	      if (files != null) {
+	          for (File file : files) {
+	              if (file.isFile())
+	                  length += file.length();
+	              else
+	                  length += getDirectorySizeLegacy(file);
+	          }
+	      }
+	      return length;
+	  }
 	
 	public static String getPathFileByName(String name, String tk) {
 		String pathForTK = pathRootServer + "\\" + tk;
@@ -791,6 +1086,17 @@ class XuLyClientServer implements Runnable {
 			trave.add(getMD5(temp1));
 		}
 		return trave;
+	}
+	
+	static String getHostsubPort(String s) { // input "File: hello.cpp" -> output "hello.cpp"
+		int index = 0;
+		for(int i = 0; i < s.length() - 1; i++) {
+			if(s.charAt(i) == ':') {
+				index = i;
+				break;
+			}
+		}
+		return s.substring(0, index);
 	}
 }
 
@@ -1062,6 +1368,96 @@ class BO { ///// SQLLLLLLL
 			ps.close();
 		} catch (Exception e) {
 			System.out.println("ERROR17: " + e);
+		}
+		return trave;
+	}
+	
+//	public ArrayList<String> get100ActivityNewest() {
+//		// trả về 100 hoạt động gần nhất
+//		ArrayList<String> trave = new ArrayList<String>();
+//		try {
+//			Class.forName("com.mysql.cj.jdbc.Driver");
+//			String url = "jdbc:mysql://localhost:3306/pbl4";
+//			Connection con = DriverManager.getConnection(url, "root", "");
+//			PreparedStatement ps;
+//			ps = con.prepareStatement("SELECT * FROM `hoatdong` ORDER BY MSHD DESC LIMIT 100");
+//			ResultSet rs = ps.executeQuery();
+//			while (rs.next()) {
+//				String atvt = "";
+//				atvt += "   " + rs.getString("ThoiGian");
+//				atvt +=	"   " + rs.getString("TaiKhoan");
+//				atvt += "   " + rs.getString("HanhVi");
+//				atvt += "   " + rs.getString("DoiTuong");
+//				
+//				if(atvt.length() > 92) {
+//					atvt = atvt.substring(0, 90) + "...";
+//				}
+//				
+//				trave.add(atvt);
+//			}
+//			rs.close();
+//			ps.close();
+//		} catch (Exception e) {
+//			System.out.println("ERROR172: " + e);
+//		}
+//		return trave;
+//	}
+	
+	public ArrayList<HoatDong> get100ActivityNewest() {
+		// trả về 100 hoạt động gần nhất
+		ArrayList<HoatDong> trave = new ArrayList<HoatDong>();
+		try {
+			Class.forName("com.mysql.cj.jdbc.Driver");
+			String url = "jdbc:mysql://localhost:3306/pbl4";
+			Connection con = DriverManager.getConnection(url, "root", "");
+			PreparedStatement ps;
+			ps = con.prepareStatement("SELECT * FROM `hoatdong` ORDER BY MSHD DESC LIMIT 100");
+			ResultSet rs = ps.executeQuery();
+			while (rs.next()) {
+				HoatDong temp = new HoatDong();
+				temp.setThoiGian(rs.getString("ThoiGian"));
+				temp.setTaiKhoan(rs.getString("TaiKhoan"));
+				temp.setHanhVi(rs.getString("HanhVi"));
+				temp.setDoiTuong(rs.getString("DoiTuong"));
+				
+				trave.add(temp);
+			}
+			rs.close();
+			ps.close();
+		} catch (Exception e) {
+			System.out.println("ERROR172: " + e);
+		}
+		return trave;
+	}
+	
+	public ArrayList<HoatDong> getSelectedActivity(String tk, String hv, String staTime, String endTime) {
+		// trả về 100 hoạt động gần nhất
+		ArrayList<HoatDong> trave = new ArrayList<HoatDong>();
+		try {
+			Class.forName("com.mysql.cj.jdbc.Driver");
+			String url = "jdbc:mysql://localhost:3306/pbl4";
+			Connection con = DriverManager.getConnection(url, "root", "");
+			PreparedStatement ps;
+			ps = con.prepareStatement("SELECT * FROM `hoatdong` WHERE TaiKhoan LIKE ? and HanhVi LIKE ?"
+					+ " AND ThoiGian BETWEEN ? AND ? + INTERVAL 1 day ORDER BY MSHD DESC LIMIT 100");
+			ps.setString(1, "%" + tk + "%");
+			ps.setString(2, "%" + hv + "%");
+			ps.setString(3, staTime);
+			ps.setString(4, endTime);
+			ResultSet rs = ps.executeQuery();
+			while (rs.next()) {
+				HoatDong temp = new HoatDong();
+				temp.setThoiGian(rs.getString("ThoiGian"));
+				temp.setTaiKhoan(rs.getString("TaiKhoan"));
+				temp.setHanhVi(rs.getString("HanhVi"));
+				temp.setDoiTuong(rs.getString("DoiTuong"));
+				
+				trave.add(temp);
+			}
+			rs.close();
+			ps.close();
+		} catch (Exception e) {
+			System.out.println("ERROR172: " + e);
 		}
 		return trave;
 	}
