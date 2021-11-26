@@ -1,6 +1,7 @@
 package PBL4;
 
 import java.awt.Component;
+import ModelDAU.BO;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
@@ -22,6 +23,8 @@ import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
+
+import ModelBEAN.HoatDong;
 
 public class testJTable {
 	static JTable jpShowNotify;

@@ -17,6 +17,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.*;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -27,13 +28,15 @@ import javax.swing.border.EmptyBorder;
 public class Client {
 	static JFrame jFrame;
 	static JPanel jpConnect, jpButton, jpShowFileServer, jpListUser;
-	static JTextField jtHost, jtPort, jtTK, jtMK;
+	static JTextField jtHost, jtPort, jtTK;
+	static JPasswordField jtMK;
 	static JLabel jlTitle, jlFileName, jlDataServer;
 	static JComboBox jcShare;
 	static JButton jbConnect;
 	static String host = ""; static int port = 0;
 	static String pathRootClient = System.getProperty("user.home") + "\\Downloads\\PBL4_Client";
 	static File folderRootClient = new File(pathRootClient);
+	static ArrayList<String> listNameExist = new ArrayList<>();
 	
 	public static void main(String[] args) {
 		
@@ -62,7 +65,7 @@ public class Client {
 		jlTitle.setBorder(new EmptyBorder(20, 0, 10, 0));
 		jlTitle.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-		jlFileName = new JLabel("Chọn tệp hoặc thư mục cần gửi đi");
+		jlFileName = new JLabel("Thực Hiện Các Tùy Chọn");
 		jlFileName.setFont(new Font("Arial", Font.BOLD, 20));
 		jlFileName.setBorder(new EmptyBorder(0, 0, 0, 0));
 		jlFileName.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -92,49 +95,49 @@ public class Client {
 		jtPort.setPreferredSize(new Dimension(100, 40));
 		jtPort.setFont(new Font("Arial", Font.PLAIN, 20));
 		jtTK = new JTextField("phongban01");
-		jtTK.setPreferredSize(new Dimension(250, 40));
+		jtTK.setPreferredSize(new Dimension(240, 40));
 		jtTK.setFont(new Font("Arial", Font.PLAIN, 20));
-		jtMK = new JTextField("1");
-		jtMK.setPreferredSize(new Dimension(250, 40));
+		jtMK = new JPasswordField("1");
+		jtMK.setPreferredSize(new Dimension(240, 40));
 		jtMK.setFont(new Font("Arial", Font.PLAIN, 20));
 		
 		jlhost = new JLabel("Host: ");
 		jlhost.setFont(new Font("Arial", Font.BOLD, 20));
-		jlhost.setBorder(new EmptyBorder(20, 0, 0, 0));
+		jlhost.setBorder(new EmptyBorder(10, 0, 10, 0));
 		
 		jlport = new JLabel("Port: ");
 		jlport.setFont(new Font("Arial", Font.BOLD, 20));
-		jlport.setBorder(new EmptyBorder(20, 0, 0, 0));
+		jlport.setBorder(new EmptyBorder(10, 0, 10, 0));
 		
 		jlTK = new JLabel("User: ");
 		jlTK.setFont(new Font("Arial", Font.BOLD, 20));
-		jlTK.setBorder(new EmptyBorder(20, 0, 0, 0));
+		jlTK.setBorder(new EmptyBorder(10, 0, 10, 0));
 		
 		jlMK = new JLabel("Pass: ");
 		jlMK.setFont(new Font("Arial", Font.BOLD, 20));
-		jlMK.setBorder(new EmptyBorder(20, 0, 0, 0));
+		jlMK.setBorder(new EmptyBorder(10, 57, 10, 0));
 		
 		jbConnect = new JButton("Kết nối");
 		jbConnect.setPreferredSize(new Dimension(200, 40));
 		jbConnect.setFont(new Font("Arial", Font.BOLD, 20));
 
 		jbChooseFile = new JButton("Chọn tệp để gửi");
-		jbChooseFile.setPreferredSize(new Dimension(275, 40));
+		jbChooseFile.setPreferredSize(new Dimension(302, 40));
 		jbChooseFile.setFont(new Font("Arial", Font.BOLD, 20));
 		jbChooseFile.setEnabled(false);
 
 		jbChooseFolder = new JButton("Chọn thư mục để gửi");
-		jbChooseFolder.setPreferredSize(new Dimension(275, 40));
+		jbChooseFolder.setPreferredSize(new Dimension(302, 40));
 		jbChooseFolder.setFont(new Font("Arial", Font.BOLD, 20));
 		jbChooseFolder.setEnabled(false);
 
 		jbSendFile = new JButton("Gửi tệp đã chọn");
-		jbSendFile.setPreferredSize(new Dimension(275, 40));
+		jbSendFile.setPreferredSize(new Dimension(303, 40));
 		jbSendFile.setFont(new Font("Arial", Font.BOLD, 20));
 		jbSendFile.setEnabled(false);
 
 		jbSendFolder = new JButton("Gửi thư mục đã chọn");
-		jbSendFolder.setPreferredSize(new Dimension(275, 40));
+		jbSendFolder.setPreferredSize(new Dimension(303, 40));
 		jbSendFolder.setFont(new Font("Arial", Font.BOLD, 20));
 		jbSendFolder.setEnabled(false);
 		
@@ -186,10 +189,6 @@ public class Client {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				if(!jbConnect.getText().equals("Kết nối")) {
-					jbSynch.setEnabled(false);
-					jbChooseFile.setEnabled(false);
-					jbChooseFolder.setEnabled(false);
-					jbShare.setEnabled(false);
 					jlDataServer.setText("Vui Lòng kết nối");
 					jtHost.setEditable(true);
 					jtPort.setEditable(true);
@@ -210,9 +209,15 @@ public class Client {
 					jpShowFileServer.revalidate();
 					jpShowFileServer.repaint();
 					
-
+					jbChooseFile.setEnabled(false);
+					jbChooseFolder.setEnabled(false);
+					jbSendFile.setEnabled(false);
+					jbSendFolder.setEnabled(false);
+					jbSynch.setEnabled(false);
+					jbShare.setEnabled(false);
 				} else {
-					if(jtHost.getText().equals("") || jtPort.getText().equals("") || jtTK.getText().equals("") || jtMK.getText().equals("")) {
+					if(jtHost.getText().equals("") || jtPort.getText().equals("") || 
+							jtTK.getText().equals("") || jtMK.getText().equals("")) {
 						jlDataServer.setText("Nhập vào đủ thông tin!!!");
 					} else {
 						jpShowFileServer.removeAll();
@@ -244,6 +249,10 @@ public class Client {
 						if(status_ == 1) {
 							jlDataServer.setText("Đơn vị truy cập không đúng!");
 						}
+						
+						if(status_ == 3) {
+							jlDataServer.setText("Hiện quyền truy cập tài khoản này đã bị chặn!");
+						}
 					}
 				}
 			}
@@ -267,34 +276,42 @@ public class Client {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				jlFileName.setText("Đang gửi đi, có thể mất vài phút nếu đường truyền bận!");
-				if (isServerAlive() == 10) {
-					try {
-						Socket socket = new Socket(host, port);
-						DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
-						dos.writeUTF("SendFile");
-						dos.writeUTF(jtTK.getText());
-						if(jcShare.getSelectedIndex()==0) {
+				if(listNameExist.contains(fileToSend[0].getName())) {
+					JOptionPane.showMessageDialog(null, "Lỗi nè, Tên dữ liệu này đã tồn tại, hãy thử lại với tên khác!!",
+							"Thất Bại", JOptionPane.ERROR_MESSAGE);
+				} else {
+					if (isServerAlive() == 10) {
+						jlFileName.setText("Đang gửi đi, có thể mất vài phút nếu đường truyền bận!");
+						try {
+							Socket socket = new Socket(host, port);
+							DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
+							dos.writeUTF("SendFile");
 							dos.writeUTF(jtTK.getText());
-						} else {
-							dos.writeUTF("public");
+							if(jcShare.getSelectedIndex()==0) {
+								dos.writeUTF(jtTK.getText());
+							} else {
+								dos.writeUTF("public");
+							}
+							dos.writeUTF(fileToSend[0].getName()); // gửi tên file
+							jlFileName.setText("Đang gửi đi, có thể mất vài phút nếu đường truyền bận!");
+							//System.out.println(fileToSend[0].getName() + " ...//... " + fileToSend[0].getPath());
+							dos.writeUTF(fileToSend[0].getPath()); // gửi path file trong máy client
+							FileInputStream fileInputStream = new FileInputStream(fileToSend[0].getAbsolutePath());
+							byte[] fileBytes = new byte[(int) fileToSend[0].length()];
+							fileInputStream.read(fileBytes);
+							dos.writeInt(fileBytes.length);
+							dos.write(fileBytes);
+							dos.close();
+							socket.close();
+							jbSendFile.setEnabled(false);
+							jlFileName.setText("Đã gửi tệp: '" + fileToSend[0].getName() + "' thành công!");
+							LoadData(); // gửi file xong load lại
+							fileToSend[0] = null;
+						} catch (Exception er) {
+							System.out.println("ERROR1: " + e);
 						}
-						dos.writeUTF(fileToSend[0].getName()); // gửi tên file
-						//System.out.println(fileToSend[0].getName() + " ...//... " + fileToSend[0].getPath());
-						dos.writeUTF(fileToSend[0].getPath()); // gửi path file trong máy client
-						FileInputStream fileInputStream = new FileInputStream(fileToSend[0].getAbsolutePath());
-						byte[] fileBytes = new byte[(int) fileToSend[0].length()];
-						fileInputStream.read(fileBytes);
-						dos.writeInt(fileBytes.length);
-						dos.write(fileBytes);
-						dos.close();
-						socket.close();
-						jbSendFile.setEnabled(false);
-						jlFileName.setText("Đã gửi tệp: '" + fileToSend[0].getName() + "' thành công!");
-						LoadData(); // gửi file xong load lại
-						fileToSend[0] = null;
-					} catch (Exception er) {
-						System.out.println("ERROR1: " + e);
+					} else {
+						jlDataServer.setText("Lỗi, hãy thực hiện kết nối lại!!!");
 					}
 				}
 			}
@@ -318,48 +335,56 @@ public class Client {
 		jbSendFolder.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				jlFileName.setText("Đang gửi đi, có thể mất vài phút nếu đường truyền bận!");
-				if (isServerAlive() == 10) {
-					try {
-						Socket socket = new Socket(host, port);
-						DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
-						dos.writeUTF("SendFolder");
-						dos.writeUTF(jtTK.getText());
-						if(jcShare.getSelectedIndex()==0) {
+				if(listNameExist.contains(folderToSend[0].getName())) {
+					JOptionPane.showMessageDialog(null, "Lỗi nè, Tên dữ liệu này đã tồn tại, hãy thử lại với tên khác!!",
+							"Thất Bại", JOptionPane.ERROR_MESSAGE);
+				} else {
+					jlFileName.setText("Đang gửi đi, có thể mất vài phút nếu đường truyền bận!");
+					if (isServerAlive() == 10) {
+						try {
+							Socket socket = new Socket(host, port);
+							DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
+							dos.writeUTF("SendFolder");
 							dos.writeUTF(jtTK.getText());
-						} else {
-							dos.writeUTF("public");
+							jlFileName.setText("Đang gửi đi, có thể mất vài phút nếu đường truyền bận!");
+							if(jcShare.getSelectedIndex()==0) {
+								dos.writeUTF(jtTK.getText());
+							} else {
+								dos.writeUTF("public");
+							}
+							dos.writeUTF(folderToSend[0].getName());
+							dos.writeUTF(folderToSend[0].getPath()); // gửi path file trong máy client
+							File arr[] = folderToSend[0].listFiles();
+							ArrayList<String> nameFile = new ArrayList<>();
+							ArrayList<String> nameDire = new ArrayList<>();
+							getChild(arr, 0, "", nameFile, nameDire);
+							jlFileName.setText("Đang gửi đi, có thể mất vài phút nếu đường truyền bận!");
+							ObjectOutputStream objectOutput = new ObjectOutputStream(socket.getOutputStream());
+			                objectOutput.writeObject(nameDire);
+			                
+			                dos.writeInt(nameFile.size());
+			                
+							for (int i = 0; i < nameFile.size(); i++) { // send path, name, data.
+								File sendFile = new File(folderToSend[0].getPath() + "\\" + nameFile.get(i));
+								dos.writeUTF(nameFile.get(i)); // gửi tên + path con trong thư mục chọn gửi
+								FileInputStream fileInputStream = new FileInputStream(sendFile.getAbsolutePath());
+								byte[] fileBytes = new byte[(int) sendFile.length()];
+								fileInputStream.read(fileBytes);
+								dos.writeInt(fileBytes.length);
+								dos.write(fileBytes);
+							}
+							objectOutput.close();
+							dos.close();
+							socket.close();
+							jbSendFolder.setEnabled(false);
+							jlFileName.setText("Đã gửi thư mục: '" + folderToSend[0].getName() + "' thành công!");
+							LoadData(); // gửi thư mục xong load lại
+							folderToSend[0] = null;
+						} catch (Exception er) {
+							System.out.println("ERROR2: " + er);
 						}
-						dos.writeUTF(folderToSend[0].getName());
-						dos.writeUTF(folderToSend[0].getPath()); // gửi path file trong máy client
-						File arr[] = folderToSend[0].listFiles();
-						ArrayList<String> nameFile = new ArrayList<>();
-						ArrayList<String> nameDire = new ArrayList<>();
-						getChild(arr, 0, "", nameFile, nameDire);
-						
-						ObjectOutputStream objectOutput = new ObjectOutputStream(socket.getOutputStream());
-		                objectOutput.writeObject(nameDire);
-		                
-		                dos.writeInt(nameFile.size());
-		                
-						for (int i = 0; i < nameFile.size(); i++) { // send path, name, data.
-							File sendFile = new File(folderToSend[0].getPath() + "\\" + nameFile.get(i));
-							dos.writeUTF(nameFile.get(i)); // gửi tên + path con trong thư mục chọn gửi
-							FileInputStream fileInputStream = new FileInputStream(sendFile.getAbsolutePath());
-							byte[] fileBytes = new byte[(int) sendFile.length()];
-							fileInputStream.read(fileBytes);
-							dos.writeInt(fileBytes.length);
-							dos.write(fileBytes);
-						}
-						objectOutput.close();
-						dos.close();
-						socket.close();
-						jbSendFolder.setEnabled(false);
-						jlFileName.setText("Đã gửi thư mục: '" + folderToSend[0].getName() + "' thành công!");
-						LoadData(); // gửi thư mục xong load lại
-						folderToSend[0] = null;
-					} catch (Exception er) {
-						System.out.println("ERROR2: " + er);
+					} else {
+						jlDataServer.setText("Lỗi, hãy thực hiện kết nối lại!!!");
 					}
 				}
 			}
@@ -393,7 +418,7 @@ public class Client {
 			@Override
 			public void itemStateChanged(ItemEvent e) {
 				LoadData(); // chọn cbb rồi load lại
-				if(jcShare.getSelectedIndex()<2) {
+				if(jcShare.getSelectedIndex() < 2) {
 					jbChooseFile.setEnabled(true);
 					jbChooseFolder.setEnabled(true);
 				} else {
@@ -480,8 +505,10 @@ public class Client {
 								ArrayList<String> nameDire = new ArrayList<>();
 								ArrayList<String> nameDire21 = new ArrayList<>(); // phụ để làm tham số thui
 								getChild(arr, 0, "", ListnameFile3, nameDire); // lấy path all thư mục
-								getChild(arr, 0, tempFile.getName() + "\\", ListnameFile1, nameDire21); // lấy path con file
-								getChild(arr, 0, listPath.get(i) + "\\", ListnameFile2, nameDire21); // lấy full path file
+								// lấy path con file
+								getChild(arr, 0, tempFile.getName() + "\\", ListnameFile1, nameDire21);
+								// lấy full path file
+								getChild(arr, 0, listPath.get(i) + "\\", ListnameFile2, nameDire21);
 								//System.out.println(nameDire.size());
 								ObjectOutputStream objectOutput = new ObjectOutputStream(socket.getOutputStream());
 				                objectOutput.writeObject(nameDire); // gửi list path folder wa cho server so sánh
@@ -527,6 +554,8 @@ public class Client {
 					} catch (Exception er) {
 						System.out.println("ERROR24: " + er);
 					}
+				} else {
+					jlDataServer.setText("Lỗi, hãy thực hiện kết nối lại!!!");
 				}
 			}
 		});
@@ -553,70 +582,88 @@ public class Client {
 		}
 		return trave;
 	}
+	
+	static String getFileExtension(String fileName) {
+        // Get the file type by using the last occurence of . (for example aboutMe.txt returns txt).
+        // Will have issues with files like myFile.tar.gz.
+        int i = fileName.lastIndexOf('.');
+        // If there is an extension.
+        if (i > 0 && i + 2 < fileName.length()) {
+            // Set the extension to the extension of the filename.
+            return fileName.substring(i + 1);
+        } else {
+            return "No extension found.";
+        }
+    }
 
+	static JFrame createFrame(byte[] fileData, String fileExtension) {
+        JFrame jFrame = new JFrame("Xem Trước");
+        jFrame.setSize(525, 625);
+		jFrame.setLocationRelativeTo(null);
+
+        JPanel jPanelct = new JPanel();
+        jPanelct.setLayout(new BoxLayout(jPanelct, BoxLayout.Y_AXIS));
+
+        // Label to hold the content of the file whether it be text of images.
+        JLabel jlFileContent = new JLabel();
+        jlFileContent.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+
+        // If the file is a text file then display the text.
+        if (fileExtension.equalsIgnoreCase("txt")) {
+            // Wrap it with <html> so that new lines are made.
+            jlFileContent.setText(new String(fileData, StandardCharsets.UTF_8));
+
+            jlFileContent.setFont(new Font("Arial", Font.BOLD, 24));
+            jlFileContent.setBorder(new EmptyBorder(20, 0, 10, 0));
+            // If the file is not a text file then make it an image.
+        } else {
+            jlFileContent.setIcon(new ImageIcon(fileData));
+        }
+
+        // Add everything to the panel before adding to the frame.
+        jPanelct.add(jlFileContent);
+
+        // Add panel to the frame.
+        jFrame.add(jPanelct);
+
+        // Return the jFrame so it can be passed the right data and then shown.
+        return jFrame;
+    }
+	
 	static MouseListener getMouseListener(String todo) {
 		return new MouseListener() {
 
 			@Override
 			public void mouseReleased(MouseEvent e) {
-				if (todo.equals("Click")) {
-					//System.out.println(todo + ": " + ((JPanel) e.getSource()).getName());
-				} else {
-					//System.out.println(todo + ": " + ((JButton) e.getSource()).getName());
-					switch (todo) {
-					case "Dele": {
-						try {
-							String name_ = ((JButton) e.getSource()).getName();
-							System.out.println(name_);
-							//int index = Integer.parseInt(((JButton) e.getSource()).getName());
-							Socket socket = new Socket(host, port);
-							DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
-							dos.writeUTF("Delete");
-							dos.writeUTF(jtTK.getText());
-							if(jcShare.getSelectedIndex()==0) {
+				if(isServerAlive() == 10) {
+					if (todo.equals("Click")) {
+						System.out.println(todo + ": " + ((JPanel) e.getSource()).getName());
+						String ext = getFileExtension(((JPanel) e.getSource()).getName());
+						System.out.println(ext);
+						if(ext.equalsIgnoreCase("txt") || ext.equalsIgnoreCase("png") || ext.equalsIgnoreCase("jpg")) {
+							
+							try {
+								String name_ = ((JPanel) e.getSource()).getName();
+								Socket socket = new Socket(host, port);
+								DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
+				                DataInputStream dis = new DataInputStream(socket.getInputStream());
+								dos.writeUTF("Download");
 								dos.writeUTF(jtTK.getText());
-							} else {
-								if(jcShare.getSelectedIndex()==1) {
-									dos.writeUTF("public");
+								if(jcShare.getSelectedIndex()==0) {
+									dos.writeUTF(jtTK.getText());
 								} else {
-									dos.writeUTF(jcShare.getSelectedItem().toString());
+									if(jcShare.getSelectedIndex()==1) {
+										dos.writeUTF("public");
+									} else {
+										dos.writeUTF(jcShare.getSelectedItem().toString());
+									}
 								}
-							}
-							dos.writeUTF(name_);
-							DataInputStream dis = new DataInputStream(socket.getInputStream());
-							System.out.println(dis.readUTF());
-							LoadData(); // xóa xong load lại để mất
-							dos.close();
-							socket.close();
-							jcShare.setSelectedIndex(0); // reset lại đối với folder thì bị lỗi nên về 0 cho chắc
-						} catch (Exception er) {
-							System.out.println("ERROR6 delete: " + er);
-						}
-						break;
-					}
-					case "Down": {
-						try {
-							String name_ = ((JButton) e.getSource()).getName();
-							Socket socket = new Socket(host, port);
-							DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
-			                DataInputStream dis = new DataInputStream(socket.getInputStream());
-							dos.writeUTF("Download");
-							dos.writeUTF(jtTK.getText());
-							if(jcShare.getSelectedIndex()==0) {
-								dos.writeUTF(jtTK.getText());
-							} else {
-								if(jcShare.getSelectedIndex()==1) {
-									dos.writeUTF("public");
-								} else {
-									dos.writeUTF(jcShare.getSelectedItem().toString());
-								}
-							}
-							dos.writeUTF(name_);
-							//dos.writeInt(index);
-							String namestr = "";
-							String request = dis.readUTF();
-							switch (request) {
-							case "SendFile": {
+								dos.writeUTF(name_);
+								
+								String namestr = "";
+								String request = dis.readUTF();
+
 								String nameFile = dis.readUTF();
 								namestr = "tệp " + nameFile;
 								int sizeFile = dis.readInt();
@@ -628,128 +675,231 @@ public class Client {
 								if(jcShare.getSelectedIndex() > 1) {
 									nameFile = jcShare.getSelectedItem().toString() + "_" + nameFile;
 								}
-								File fileToDownload = new File(pathRootClient + "\\" + nameFile);
-								FileOutputStream fileOutputStream = new FileOutputStream(fileToDownload);
-			                    fileOutputStream.write(fileContentBytes);
-			                    fileOutputStream.close();
-			                    System.out.println(dis.readUTF());
-								break;
-							}
-							case "SendFolder": {
-								String nameFolder = dis.readUTF();
-								namestr = "thư mục " + nameFolder;
-								if(jcShare.getSelectedIndex() == 1) {
-									nameFolder = "public_" + nameFolder;
-								}
-								if(jcShare.getSelectedIndex() > 1) {
-									nameFolder = jcShare.getSelectedItem().toString() + "_" + nameFolder;
-								}
-								File newfolder = new File(pathRootClient + "\\" + nameFolder);
-								if (!newfolder.exists()){
-									newfolder.mkdirs();
-						        }
-								ObjectInputStream objectInput = new ObjectInputStream(socket.getInputStream());
-								Object objectReceive = objectInput.readObject();
-								ArrayList<String> NameFolderList = (ArrayList<String>)objectReceive;
-								int amountFileReceive = dis.readInt();
-								//System.out.println("sẽ nhận thêm: " + amountFileReceive);
-								for(int i = 0; i < NameFolderList.size(); i++) {
-									File new_folder = new File(newfolder + "\\" + NameFolderList.get(i));
-									if (!new_folder.exists()){
-										new_folder.mkdirs();
-							        }
-								}
+
+								System.out.println("1");
 								
-								for(int i = 0; i < amountFileReceive; i++) {
+								JFrame jfPreview = createFrame(fileContentBytes, ext);
+		                        jfPreview.setVisible(true);
+								
+			                    System.out.println(dis.readUTF());
+
+								dos.close();
+								socket.close();
+							} catch (Exception er) {
+								System.out.println("ERROR71: " + er);
+							}
+							
+							
+							
+							
+							
+							
+							
+						}
+					} else {
+						//System.out.println(todo + ": " + ((JButton) e.getSource()).getName());
+						switch (todo) {
+						case "Dele": {
+							String name_ = ((JButton) e.getSource()).getName();
+							Object[] options = {"Có", "Hoàn Tác"};
+							int rs = JOptionPane.showOptionDialog(
+									new JFrame(),
+			                        "Bạn có chắc muốn xóa '" + name_ + "' ? Dữ liệu sẽ không thể khôi phục!!",
+			                        "Xác nhận",
+			                        JOptionPane.YES_NO_OPTION,
+			                        JOptionPane.QUESTION_MESSAGE,
+			                        null,
+			                        options,
+			                        options[0]);
+							if(rs == JOptionPane.YES_OPTION) {
+								try {
+									System.out.println(name_);
+									//int index = Integer.parseInt(((JButton) e.getSource()).getName());
+									Socket socket = new Socket(host, port);
+									DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
+									dos.writeUTF("Delete");
+									dos.writeUTF(jtTK.getText());
+									if(jcShare.getSelectedIndex() == 0) {
+										dos.writeUTF(jtTK.getText());
+									} else {
+										if(jcShare.getSelectedIndex()==1) {
+											dos.writeUTF("public");
+										} else {
+											dos.writeUTF(jcShare.getSelectedItem().toString());
+										}
+									}
+									dos.writeUTF(name_);
+									DataInputStream dis = new DataInputStream(socket.getInputStream());
+									System.out.println(dis.readUTF());
+									LoadData(); // xóa xong load lại để mất
+									dos.close();
+									socket.close();
+									jcShare.setSelectedIndex(0); // reset lại đối với folder thì bị lỗi nên về 0 cho chắc
+								} catch (Exception er) {
+									System.out.println("ERROR6 delete: " + er);
+								}
+							}
+							break;
+						}
+						case "Down": {
+							try {
+								String name_ = ((JButton) e.getSource()).getName();
+								Socket socket = new Socket(host, port);
+								DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
+				                DataInputStream dis = new DataInputStream(socket.getInputStream());
+								dos.writeUTF("Download");
+								dos.writeUTF(jtTK.getText());
+								if(jcShare.getSelectedIndex()==0) {
+									dos.writeUTF(jtTK.getText());
+								} else {
+									if(jcShare.getSelectedIndex()==1) {
+										dos.writeUTF("public");
+									} else {
+										dos.writeUTF(jcShare.getSelectedItem().toString());
+									}
+								}
+								dos.writeUTF(name_);
+								//dos.writeInt(index);
+								String namestr = "";
+								String request = dis.readUTF();
+								switch (request) {
+								case "SendFile": {
 									String nameFile = dis.readUTF();
+									namestr = "tệp " + nameFile;
 									int sizeFile = dis.readInt();
 									byte[] fileContentBytes = new byte[sizeFile];
 									dis.readFully(fileContentBytes, 0, fileContentBytes.length);
-									File fileToDownload = new File(newfolder + "\\" + nameFile);
+									if(jcShare.getSelectedIndex() == 1) {
+										nameFile = "public_" + nameFile;
+									}
+									if(jcShare.getSelectedIndex() > 1) {
+										nameFile = jcShare.getSelectedItem().toString() + "_" + nameFile;
+									}
+									File fileToDownload = new File(pathRootClient + "\\" + nameFile);
 									FileOutputStream fileOutputStream = new FileOutputStream(fileToDownload);
 				                    fileOutputStream.write(fileContentBytes);
 				                    fileOutputStream.close();
+				                    System.out.println(dis.readUTF());
+									break;
 								}
-								System.out.println(dis.readUTF());
-								break;
+								case "SendFolder": {
+									String nameFolder = dis.readUTF();
+									namestr = "thư mục " + nameFolder;
+									if(jcShare.getSelectedIndex() == 1) {
+										nameFolder = "public_" + nameFolder;
+									}
+									if(jcShare.getSelectedIndex() > 1) {
+										nameFolder = jcShare.getSelectedItem().toString() + "_" + nameFolder;
+									}
+									File newfolder = new File(pathRootClient + "\\" + nameFolder);
+									if (!newfolder.exists()){
+										newfolder.mkdirs();
+							        }
+									ObjectInputStream objectInput = new ObjectInputStream(socket.getInputStream());
+									Object objectReceive = objectInput.readObject();
+									ArrayList<String> NameFolderList = (ArrayList<String>)objectReceive;
+									int amountFileReceive = dis.readInt();
+									//System.out.println("sẽ nhận thêm: " + amountFileReceive);
+									for(int i = 0; i < NameFolderList.size(); i++) {
+										File new_folder = new File(newfolder + "\\" + NameFolderList.get(i));
+										if (!new_folder.exists()){
+											new_folder.mkdirs();
+								        }
+									}
+									
+									for(int i = 0; i < amountFileReceive; i++) {
+										String nameFile = dis.readUTF();
+										int sizeFile = dis.readInt();
+										byte[] fileContentBytes = new byte[sizeFile];
+										dis.readFully(fileContentBytes, 0, fileContentBytes.length);
+										File fileToDownload = new File(newfolder + "\\" + nameFile);
+										FileOutputStream fileOutputStream = new FileOutputStream(fileToDownload);
+					                    fileOutputStream.write(fileContentBytes);
+					                    fileOutputStream.close();
+									}
+									System.out.println(dis.readUTF());
+									break;
+								}
+								default:
+									break;
+								}
+								jlFileName.setText("Đã tải " + namestr + " thành công!");
+								dos.close();
+								socket.close();
+							} catch (Exception er) {
+								System.out.println("ERROR7: " + er);
 							}
-							default:
-								break;
-							}
-							jlFileName.setText("Đã tải " + namestr + " thành công!");
-							dos.close();
-							socket.close();
-						} catch (Exception er) {
-							System.out.println("ERROR7: " + er);
-						}
-						break;
-					}
-					
-					case "OpenShare":{
-						try {
-							String name = ((JButton) e.getSource()).getName();
-							Socket socket = new Socket(host, port);
-							DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
-							dos.writeUTF("OpenShare");
-							dos.writeUTF(jtTK.getText()); // gửi định danh người share
-							dos.writeUTF(name);           // gửi định danh người được nhận dữ liệu
-							dos.close();
-							socket.close();
-							LoadListUS();
-						} catch (Exception er) {
-							System.out.println("ERROR8: " + er);
+							break;
 						}
 						
-						//System.out.println("Mở chia sẻ: " + ((JButton) e.getSource()).getName());
-				        break;
-					}
-					
-					case "CloseShare":{
-						try {
-							String name = ((JButton) e.getSource()).getName();
-							Socket socket = new Socket(host, port);
-							DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
-							dos.writeUTF("CloseShare");
-							dos.writeUTF(jtTK.getText()); // gửi định danh người ngắt share
-							dos.writeUTF(name);           // gửi định danh người bị ngắt dữ liệu
-							dos.close();
-							socket.close();
-							LoadListUS();
-						} catch (Exception er) {
-							System.out.println("ERROR9: " + er);
+						case "OpenShare":{
+							try {
+								String name = ((JButton) e.getSource()).getName();
+								Socket socket = new Socket(host, port);
+								DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
+								dos.writeUTF("OpenShare");
+								dos.writeUTF(jtTK.getText()); // gửi định danh người share
+								dos.writeUTF(name);           // gửi định danh người được nhận dữ liệu
+								dos.close();
+								socket.close();
+								LoadListUS();
+							} catch (Exception er) {
+								System.out.println("ERROR8: " + er);
+							}
+							
+							//System.out.println("Mở chia sẻ: " + ((JButton) e.getSource()).getName());
+					        break;
 						}
 						
-						//System.out.println("Đóng Chia sẻ: " + ((JButton) e.getSource()).getName());
-				        break;
-					}
-					
-					case "Copy":{
-						try {
-							Socket socket = new Socket(host, port);
-							DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
-							//int index = Integer.parseInt(((JButton) e.getSource()).getName());
-							String name_ = ((JButton) e.getSource()).getName();
-							dos.writeUTF("Copy");
-							dos.writeUTF(jtTK.getText()); // gửi định danh người request
-							if(jcShare.getSelectedIndex() == 1) { //gửi địa chỉ muốn copy
-								dos.writeUTF("public");
+						case "CloseShare":{
+							try {
+								String name = ((JButton) e.getSource()).getName();
+								Socket socket = new Socket(host, port);
+								DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
+								dos.writeUTF("CloseShare");
+								dos.writeUTF(jtTK.getText()); // gửi định danh người ngắt share
+								dos.writeUTF(name);           // gửi định danh người bị ngắt dữ liệu
+								dos.close();
+								socket.close();
+								LoadListUS();
+							} catch (Exception er) {
+								System.out.println("ERROR9: " + er);
 							}
-							if(jcShare.getSelectedIndex() > 1) {
-								dos.writeUTF(jcShare.getSelectedItem().toString());
-							}
-							dos.writeUTF(name_);
-							dos.close();  // gửi xong, đóng kết nối reload lại dữ liệu
-							socket.close();
-							LoadData(); // copy xong gửi lại
-						} catch (Exception e2) {
-							e2.printStackTrace();
+							
+							//System.out.println("Đóng Chia sẻ: " + ((JButton) e.getSource()).getName());
+					        break;
 						}
-						break;
+						
+						case "Copy":{
+							try {
+								Socket socket = new Socket(host, port);
+								DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
+								//int index = Integer.parseInt(((JButton) e.getSource()).getName());
+								String name_ = ((JButton) e.getSource()).getName();
+								dos.writeUTF("Copy");
+								dos.writeUTF(jtTK.getText()); // gửi định danh người request
+								if(jcShare.getSelectedIndex() == 1) { //gửi địa chỉ muốn copy
+									dos.writeUTF("public");
+								}
+								if(jcShare.getSelectedIndex() > 1) {
+									dos.writeUTF(jcShare.getSelectedItem().toString());
+								}
+								dos.writeUTF(name_);
+								dos.close();  // gửi xong, đóng kết nối reload lại dữ liệu
+								socket.close();
+								LoadData(); // copy xong gửi lại
+							} catch (Exception e2) {
+								e2.printStackTrace();
+							}
+							break;
+						}
+						
+						default:
+							throw new IllegalArgumentException("Unexpected value: " + todo);
+						}
 					}
-					
-					default:
-						throw new IllegalArgumentException("Unexpected value: " + todo);
-					}
+				} else {
+					jlDataServer.setText("Lỗi, hãy thực hiện kết nối lại!!!");
 				}
 			}
 
@@ -804,12 +954,14 @@ public class Client {
 			jpShowFileServer.revalidate();
 			jpShowFileServer.repaint(); // xóa và cập nhật lại céi mới trong danh sách
 			
+			listNameExist.clear();
 			
 			for (int i = 0; i < NameFileList.size(); i++) {
 				//System.out.println(getNameOnly(NameFileList.get(i)));
 				JPanel jpFileRow = new JPanel();
 				jpFileRow.setLayout(new BoxLayout(jpFileRow, BoxLayout.X_AXIS));
 				String nameRow = "";
+				listNameExist.add(getNameOnly(NameFileList.get(i)));
 				if (NameFileList.get(i).length() < 44) {
 					nameRow = NameFileList.get(i) + "    ";
 				} else {
