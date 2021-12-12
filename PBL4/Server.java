@@ -33,7 +33,7 @@ import com.toedter.calendar.JTextFieldDateEditor;
 
 import ModelBEAN.HoatDong;
 import ModelBEAN.PhongBan;
-import ModelDAU.BO;
+import ModelBO.*;
 
 public class Server {
 	static JTable jTShowNotify;
@@ -268,7 +268,7 @@ public class Server {
 				int check_ = checkDataNewUser(jtUser.getText(), jtPass1.getText(), jtPass2.getText(), jtIP.getText());
 				if(check_ == 0) {
 					BO bo = new BO();
-					if(bo.addNewUser(jtUser.getText(), jtPass1.getText(), jtIP.getText())) {
+					if(bo.addNewUserBO(jtUser.getText(), jtPass1.getText(), jtIP.getText())) {
 						jFrame.dispose();
 						JOptionPane.showMessageDialog(null, "Thêm tài khoản " + jtUser.getText() + " thành công "
 								+ "nè!!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
@@ -305,7 +305,7 @@ public class Server {
 	public static JDialog createFrameActivity() { // sử dụng jdialog để có phương thức setModal, đè lên ưu tiên
 		JDialog jFrame = new JDialog();
 		jFrame.setTitle("Kiểm Tra Hoạt Động");
-        jFrame.setSize(800, 700);
+        jFrame.setSize(1100, 700);
 		jFrame.setLocationRelativeTo(null);
 		jFrame.setModal(true);
 		
@@ -415,37 +415,37 @@ public class Server {
 				
 				switch (jcDoSth.getSelectedIndex()) {
 				case 0: {
-					listContent = bo.getSelectedActivity(jtUserName.getText(), "", day1, day2);
+					listContent = bo.getSelectedActivityBO(jtUserName.getText(), "", day1, day2);
 					break;
 				}
 				
 				case 1: {
-					listContent = bo.getSelectedActivity(jtUserName.getText(), "Gửi lên", day1, day2);
+					listContent = bo.getSelectedActivityBO(jtUserName.getText(), "Gửi lên", day1, day2);
 					break;
 				}
 
 				case 2: {
-					listContent = bo.getSelectedActivity(jtUserName.getText(), "Tải Xuống", day1, day2);
+					listContent = bo.getSelectedActivityBO(jtUserName.getText(), "Tải Xuống", day1, day2);
 					break;
 				}
 
 				case 3: {
-					listContent = bo.getSelectedActivity(jtUserName.getText(), "Xóa", day1, day2);
+					listContent = bo.getSelectedActivityBO(jtUserName.getText(), "Xóa", day1, day2);
 					break;
 				}
 
 				case 4: {
-					listContent = bo.getSelectedActivity(jtUserName.getText(), "Đồng Bộ", day1, day2);
+					listContent = bo.getSelectedActivityBO(jtUserName.getText(), "Đồng Bộ", day1, day2);
 					break;
 				}
 
 				case 5: {
-					listContent = bo.getSelectedActivity(jtUserName.getText(), "Mở", day1, day2);
+					listContent = bo.getSelectedActivityBO(jtUserName.getText(), "Mở", day1, day2);
 					break;
 				}
 
 				case 6: {
-					listContent = bo.getSelectedActivity(jtUserName.getText(), "Đóng Sẻ", day1, day2);
+					listContent = bo.getSelectedActivityBO(jtUserName.getText(), "Đóng Sẻ", day1, day2);
 					break;
 				}
 				default:
@@ -503,7 +503,7 @@ public class Server {
 			jpListUser.revalidate();
 			jpListUser.repaint(); // xóa và cập nhật lại céi mới
 			BO bo = new BO();
-			ArrayList<PhongBan> ListUS = bo.getUsers();
+			ArrayList<PhongBan> ListUS = bo.getUsersBO();
 			
 			for (int i = 0; i < ListUS.size(); i++) {
 				JPanel jpRow = new JPanel();
@@ -563,7 +563,7 @@ public class Server {
 						try {
 							String name = ((JButton) e.getSource()).getName();
 							BO bo = new BO();
-							bo.UBanUser(name, false);
+							bo.UBanUserBO(name, false);
 							LoadListUS();
 						} catch (Exception er) {
 							System.out.println("ERROR8: " + er);
@@ -577,7 +577,7 @@ public class Server {
 						try {
 							String name = ((JButton) e.getSource()).getName();
 							BO bo = new BO();
-							bo.UBanUser(name, true);
+							bo.UBanUserBO(name, true);
 							LoadListUS();
 						} catch (Exception er) {
 							System.out.println("ERROR9: " + er);
@@ -625,7 +625,7 @@ public class Server {
 		DefaultTableModel dtm = (DefaultTableModel) jTShowNotify.getModel();
 		dtm.setRowCount(0);
 		BO bo = new BO();
-		ArrayList<HoatDong> listContent = bo.get100ActivityNewest();
+		ArrayList<HoatDong> listContent = bo.get100ActivityNewestBO();
 		for(int i = 0; i < listContent.size(); i++) {
 			DefaultTableModel model = (DefaultTableModel) jTShowNotify.getModel();
 			String tg = listContent.get(i).getThoiGian();
@@ -669,7 +669,7 @@ class XuLyClientServer implements Runnable {
 				String mk = dis.readUTF();
 				DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
 				BO bo = new BO();
-				dos.writeInt(bo.checkLogin(tk, mk, getHostsubPort(socket.getRemoteSocketAddress().toString())));
+				dos.writeInt(bo.checkLoginBO(tk, mk, getHostsubPort(socket.getRemoteSocketAddress().toString())));
 				//bo.addRecord(tk, mk, getHostsubPort(socket.getRemoteSocketAddress().toString()));
 				dos.close();
 				dis.close();
@@ -680,7 +680,7 @@ class XuLyClientServer implements Runnable {
 				String tk = dis.readUTF();
 				System.out.println(tk + " đã đăng nhập...");
 				BO bo = new BO();
-				ArrayList<String> listSharePP = bo.getListShare(tk); // lấy danh sách người có chia sẻ dữ liệu với mình
+				ArrayList<String> listSharePP = bo.getListShareBO(tk); // lấy danh sách người có chia sẻ dữ liệu với mình
 				try {
 					ObjectOutputStream objectOutput = new ObjectOutputStream(socket.getOutputStream());
 					objectOutput.writeObject(listSharePP);
@@ -724,9 +724,9 @@ class XuLyClientServer implements Runnable {
 					fileOutputStream.close();
 					BO bo = new BO();
 					if(!tk.equals("public")) {
-						bo.addNewData(tk, nameFile, pathFile, "File");
+						bo.addNewDataBO(tk, nameFile, pathFile, "File");
 					}
-					bo.addRecord(tk_temp, "Gửi lên", tk + ", File: " + fileToDownload.getName());
+					bo.addRecordBO(tk_temp, "Gửi lên", tk + ", File: " + fileToDownload.getName());
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -769,9 +769,9 @@ class XuLyClientServer implements Runnable {
 					}
 					BO bo = new BO();
 					if(!tk.equals("public")) {
-						bo.addNewData(tk, nameFolder, pathFolder, "Folder");
+						bo.addNewDataBO(tk, nameFolder, pathFolder, "Folder");
 					}
-					bo.addRecord(tk_temp, "Gửi lên", tk + ", Folder: " + newfolder.getName());
+					bo.addRecordBO(tk_temp, "Gửi lên", tk + ", Folder: " + newfolder.getName());
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -799,7 +799,7 @@ class XuLyClientServer implements Runnable {
 					dos.writeUTF("Success");
 					dos.close();
 					BO bo = new BO();
-					bo.addRecord(tk0, "Tải Xuống", "(" + tk + ") File: " + fileDown.getName());
+					bo.addRecordBO(tk0, "Tải Xuống", "(" + tk + ") File: " + fileDown.getName());
 					fileBytes = null;
 					fileInputStream.close();
 				} else {
@@ -832,7 +832,7 @@ class XuLyClientServer implements Runnable {
 					objectOutput.close();
 					dos.close();
 					BO bo = new BO();
-					bo.addRecord(tk0, "Tải Xuống", "(" + tk + ") Folder: " + fileDown.getName());
+					bo.addRecordBO(tk0, "Tải Xuống", "(" + tk + ") Folder: " + fileDown.getName());
 				}
 
 				fileDown = null;
@@ -846,16 +846,16 @@ class XuLyClientServer implements Runnable {
 				String name_ = dis.readUTF();
 				BO bo = new BO();
 				if(!tk.equals("public")) {
-					bo.delData(tk, name_);
+					bo.delDataBO(tk, name_);
 				}
 				File fileDele = new File(getPathFileByName(name_, tk));
 				if (fileDele.isFile()) {
 					fileDele.delete();
-					bo.addRecord(tk_temp, "Xóa", "(" + tk + ") File: " + fileDele.getName());
+					bo.addRecordBO(tk_temp, "Xóa", "(" + tk + ") File: " + fileDele.getName());
 					System.out.println(tk + " xóa tệp tin: " + name_);
 				} else {
 					deleteFolder(fileDele);
-					bo.addRecord(tk_temp, "Xóa", "(" + tk + ") Folder: " + fileDele.getName());
+					bo.addRecordBO(tk_temp, "Xóa", "(" + tk + ") Folder: " + fileDele.getName());
 					System.out.println(tk + " xóa thư mục: " + name_);
 				}
 				DataOutputStream dos = new DataOutputStream(socket.getOutputStream());
@@ -870,8 +870,8 @@ class XuLyClientServer implements Runnable {
 				// System.out.println("Get List User Share");
 				String tk = dis.readUTF();
 				BO bo = new BO();
-				ArrayList<String> listUS = bo.getListUSShared(tk); // danh sachs all taif khaorn
-				ArrayList<String> listUSS = bo.getListUSSharedByMe(tk); // danh sach tk cho pheps
+				ArrayList<String> listUS = bo.getListUSSharedBO(tk); // danh sachs all taif khaorn
+				ArrayList<String> listUSS = bo.getListUSSharedByMeBO(tk); // danh sach tk cho pheps
 				ArrayList<Boolean> temp = new ArrayList<>();
 				for (int i = 0; i < listUS.size(); i++) {
 					if (listUSS.contains(listUS.get(i))) {
@@ -895,8 +895,8 @@ class XuLyClientServer implements Runnable {
 				String tk2 = dis.readUTF();
 				System.out.println(tk1 + " mở chia sẻ " + tk2);
 				BO bo = new BO();
-				bo.AddShare(tk1, tk2);
-				bo.addRecord(tk1, "Mở Sẻ Chia", tk2);
+				bo.AddShareBO(tk1, tk2);
+				bo.addRecordBO(tk1, "Mở Sẻ Chia", tk2);
 				socket.close();
 				break;
 			}
@@ -906,8 +906,8 @@ class XuLyClientServer implements Runnable {
 				String tk2 = dis.readUTF();
 				System.out.println(tk1 + " đóng chia sẻ " + tk2);
 				BO bo = new BO();
-				bo.DelShare(tk1, tk2);
-				bo.addRecord(tk1, "Đóng Sẻ Chia", tk2);
+				bo.DelShareBO(tk1, tk2);
+				bo.addRecordBO(tk1, "Đóng Sẻ Chia", tk2);
 				dis.close();
 				socket.close();
 				break;
@@ -923,7 +923,7 @@ class XuLyClientServer implements Runnable {
 				File fileCopynew = new File(pathRootServer + "\\" + tk1 + "\\" + fileCopy.getName());
 
 				BO bo = new BO();
-				bo.addRecord(tk1, "Sao Chép", "Của: " + tk2 + ": " + fileCopy.getName());
+				bo.addRecordBO(tk1, "Sao Chép", "Của: " + tk2 + ": " + fileCopy.getName());
 				
 				copyFolder(fileCopy, fileCopynew);
 				dis.close();
@@ -937,12 +937,12 @@ class XuLyClientServer implements Runnable {
 				
 				BO bo = new BO();
 				
-				bo.addRecord(tk, "Đồng Bộ", tk);
+				bo.addRecordBO(tk, "Đồng Bộ", tk);
 				
-				ArrayList<String> listNamePath = bo.getListNamePathFolderData(tk);
-				ArrayList<String> listPath = bo.getListPathFolderData(tk);
-				ArrayList<String> listNamePath2 = bo.getListNamePathFileData(tk);
-				ArrayList<String> listPath2 = bo.getListPathFileData(tk);
+				ArrayList<String> listNamePath = bo.getListNamePathFolderDataBO(tk);
+				ArrayList<String> listPath = bo.getListPathFolderDataBO(tk);
+				ArrayList<String> listNamePath2 = bo.getListNamePathFileDataBO(tk);
+				ArrayList<String> listPath2 = bo.getListPathFileDataBO(tk);
 				try {
 					System.out.println("ĐB");
 					System.out.println("11189");
