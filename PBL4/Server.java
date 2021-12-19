@@ -920,7 +920,7 @@ class XuLyClientServer implements Runnable {
 				String name_ = dis.readUTF();
 				System.out.println(tk1 + " copy: " + tk2 + "_._" + name_);
 				File fileCopy = new File(getPathFileByName(name_, tk2));
-				File fileCopynew = new File(pathRootServer + "\\" + tk1 + "\\" + fileCopy.getName());
+				File fileCopynew = new File(pathRootServer + "\\" + tk1 + "\\" + "(" + tk2 + ")" + fileCopy.getName());
 
 				BO bo = new BO();
 				bo.addRecordBO(tk1, "Sao Chép", "Của: " + tk2 + ": " + fileCopy.getName());

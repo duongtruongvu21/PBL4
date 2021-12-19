@@ -495,7 +495,7 @@ public class Client {
 									ListnameFile1.add(new_folder.getName());
 									ListnameFile2.add(new_folder.getPath());
 								} catch (Exception e2) {
-									// TODO: handle exception
+									System.out.println("ERROR2456: " + e2);
 								}
 							}
 							
